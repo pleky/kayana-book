@@ -1,0 +1,77 @@
+<?php
+
+use App\Models\Book;
+use App\Models\Category;
+use Inertia\Testing\AssertableInertia as Assert;
+
+use function Pest\Laravel\get;
+
+it('lists only available books', function () {
+    Book::factory()->create(['status' => 'available']);
+    Book::factory()->sold()->create();
+    Book::factory()->reserved()->create();
+
+    get(route('catalog.index'))->assertInertia(
+        fn (Assert $page) => $page
+            ->component('catalog/index')
+            ->has('books.data', 1)
+    );
+});
+
+it('filters by category slug', function () {
+    $category = Category::factory()->create(['slug' => 'novel']);
+    Book::factory()->create(['category_id' => $category->id]);
+    Book::factory()->create();
+
+    get(route('catalog.index', ['category' => 'novel']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+});
+
+it('filters by condition', function () {
+    Book::factory()->create(['condition' => 'like_new']);
+    Book::factory()->create(['condition' => 'poor']);
+
+    get(route('catalog.index', ['condition' => 'like_new']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+});
+
+it('searches by title and author', function () {
+    Book::factory()->create(['title' => 'Negeri 5 Menara', 'author' => 'Fuadi']);
+    Book::factory()->create(['title' => 'Sang Pemimpi', 'author' => 'Hirata']);
+
+    get(route('catalog.index', ['search' => 'menara']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+
+    get(route('catalog.index', ['search' => 'hirata']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+});
+
+it('filters by price range', function () {
+    Book::factory()->create(['price' => 20000]);
+    Book::factory()->create(['price' => 80000]);
+
+    get(route('catalog.index', ['min_price' => 50000]))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+});
+
+it('shows an available book detail', function () {
+    $book = Book::factory()->create(['status' => 'available']);
+
+    get(route('catalog.show', $book))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page->component('catalog/show')
+                ->where('book.id', $book->id)
+        );
+});
+
+it('hides a sold book detail', function () {
+    $book = Book::factory()->sold()->create();
+
+    get(route('catalog.show', $book))->assertNotFound();
+});
