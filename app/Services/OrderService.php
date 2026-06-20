@@ -102,6 +102,27 @@ class OrderService
     }
 
     /**
+     * Mark a paid order as completed (handed over / shipped) — the operational
+     * final state.
+     */
+    public function complete(Order $order): void
+    {
+        $order->update(['status' => 'completed']);
+    }
+
+    /**
+     * Set the manually-quoted shipping cost and recompute the total
+     * (product decision #3). Only meaningful before payment.
+     */
+    public function setShipping(Order $order, int $shippingCost): void
+    {
+        $order->update([
+            'shipping_cost' => $shippingCost,
+            'total' => $order->subtotal + $shippingCost,
+        ]);
+    }
+
+    /**
      * Cancel an order and release its still-reserved books back to available.
      * Books already sold are left untouched.
      */

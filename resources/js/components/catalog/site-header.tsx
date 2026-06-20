@@ -1,33 +1,23 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ShoppingCart } from 'lucide-react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
 import CartController from '@/actions/App/Http/Controllers/CartController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useFlashToasts } from '@/hooks/use-flash-toasts';
 import { dashboard, login } from '@/routes';
 import type { Auth } from '@/types';
 
 type SharedProps = {
     auth: Auth;
     cartCount: number;
-    flash: { success?: string | null; error?: string | null };
 };
 
 export default function SiteHeader() {
-    const { auth, cartCount, flash } = usePage<SharedProps>().props;
+    const { auth, cartCount } = usePage<SharedProps>().props;
 
-    useEffect(() => {
-        if (flash.success) {
-            toast.success(flash.success);
-        }
-
-        if (flash.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
+    useFlashToasts();
 
     return (
         <header className="border-b">

@@ -65,6 +65,7 @@ export type Order = {
     created_at: string;
     items?: OrderItem[];
     items_count?: number;
+    user?: { id: number; name: string; email?: string } | null;
 };
 
 export type Paginated<T> = {

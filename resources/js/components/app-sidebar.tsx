@@ -5,8 +5,10 @@ import {
     FolderGit2,
     LayoutGrid,
     Library,
+    ReceiptText,
 } from 'lucide-react';
 import AdminBookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -42,6 +44,11 @@ const adminNavItems: NavItem[] = [
         title: 'Kelola Buku',
         href: AdminBookController.index(),
         icon: BookCopy,
+    },
+    {
+        title: 'Pesanan Masuk',
+        href: AdminOrderController.index(),
+        icon: ReceiptText,
     },
 ];
 
