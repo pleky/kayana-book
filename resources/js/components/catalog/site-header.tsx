@@ -26,7 +26,7 @@ export default function SiteHeader() {
                     href={CatalogController.index()}
                     className="font-serif text-xl font-semibold tracking-tight text-foreground"
                 >
-                    Kayana<span className="text-primary">Book</span>
+                    Kayana<span className="text-brand">Book</span>
                 </Link>
                 <nav className="flex items-center gap-2">
                     <Button variant="ghost" asChild>

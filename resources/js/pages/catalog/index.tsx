@@ -2,6 +2,7 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { SlidersHorizontal } from 'lucide-react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import SiteHeader from '@/components/catalog/site-header';
+import { Reveal } from '@/components/motion/reveal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,14 +65,14 @@ export default function Catalog({
             <SiteHeader />
 
             <main className="mx-auto max-w-6xl px-4 py-8">
-                <header className="mb-8">
+                <Reveal as="section" className="mb-8">
                     <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
                         Katalog
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         {books.total} buku tersedia — tiap eksemplar unik.
                     </p>
-                </header>
+                </Reveal>
 
                 <div className="grid gap-8 md:grid-cols-[16rem_1fr]">
                     <aside>
@@ -268,55 +269,62 @@ export default function Catalog({
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {books.data.map((book) => {
+                                {books.data.map((book, i) => {
                                     const cover = book.primary_image?.[0];
 
                                     return (
-                                        <Link
+                                        <Reveal
                                             key={book.id}
-                                            href={CatalogController.show(
-                                                book.slug,
-                                            )}
-                                            className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
+                                            delay={Math.min(i, 9) * 45}
+                                            className="h-full"
                                         >
-                                            <div className="relative aspect-3/4 overflow-hidden bg-muted">
-                                                {cover ? (
-                                                    <img
-                                                        src={`/storage/${cover.path}`}
-                                                        alt={`Sampul ${book.title}`}
-                                                        loading="lazy"
-                                                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                    />
-                                                ) : (
-                                                    <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
-                                                        Tanpa foto
-                                                    </div>
+                                            <Link
+                                                href={CatalogController.show(
+                                                    book.slug,
                                                 )}
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="absolute top-2 left-2 backdrop-blur"
-                                                >
-                                                    {
-                                                        CONDITION_LABEL[
-                                                            book.condition
-                                                        ]
-                                                    }
-                                                </Badge>
-                                            </div>
-                                            <div className="flex flex-1 flex-col gap-1 p-3">
-                                                <h3 className="line-clamp-2 font-serif font-medium text-foreground">
-                                                    {book.title}
-                                                </h3>
-                                                {book.author && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {book.author}
+                                                className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
+                                            >
+                                                <div className="relative aspect-3/4 overflow-hidden bg-muted">
+                                                    {cover ? (
+                                                        <img
+                                                            src={`/storage/${cover.path}`}
+                                                            alt={`Sampul ${book.title}`}
+                                                            loading="lazy"
+                                                            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                                                            Tanpa foto
+                                                        </div>
+                                                    )}
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="absolute top-2 left-2 backdrop-blur"
+                                                    >
+                                                        {
+                                                            CONDITION_LABEL[
+                                                                book.condition
+                                                            ]
+                                                        }
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex flex-1 flex-col gap-1 p-3">
+                                                    <h3 className="line-clamp-2 font-serif font-medium text-foreground">
+                                                        {book.title}
+                                                    </h3>
+                                                    {book.author && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {book.author}
+                                                        </p>
+                                                    )}
+                                                    <p className="mt-auto pt-1 font-semibold text-primary">
+                                                        {rupiah.format(
+                                                            book.price,
+                                                        )}
                                                     </p>
-                                                )}
-                                                <p className="mt-auto pt-1 font-semibold text-primary">
-                                                    {rupiah.format(book.price)}
-                                                </p>
-                                            </div>
-                                        </Link>
+                                                </div>
+                                            </Link>
+                                        </Reveal>
                                     );
                                 })}
                             </div>
