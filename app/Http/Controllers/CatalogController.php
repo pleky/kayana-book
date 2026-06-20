@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,15 +17,11 @@ class CatalogController extends Controller
         $books = Book::query()
             ->available()
             ->with('primaryImage')
-            ->when($request->string('search')->trim()->value(), function (Builder $query, string $search): void {
-                $query->where(function (Builder $query) use ($search): void {
-                    $query->where('title', 'ilike', "%{$search}%")
-                        ->orWhere('author', 'ilike', "%{$search}%");
-                });
-            })
+            ->when($request->string('search')->trim()->value(), fn (Builder $query, string $search) => $query->search($search))
             ->when($request->string('category')->trim()->value(), function (Builder $query, string $slug): void {
                 $this->filterByCategory($query, $slug);
             })
+            ->when($request->string('tag')->trim()->value(), fn (Builder $query, string $slug) => $query->whereHas('tags', fn (Builder $tags) => $tags->where('slug', $slug)))
             ->when($request->string('language')->trim()->value(), fn (Builder $query, string $value) => $query->where('language', $value))
             ->when($request->string('audience')->trim()->value(), fn (Builder $query, string $value) => $query->where('audience', $value))
             ->when($request->string('condition')->trim()->value(), fn (Builder $query, string $value) => $query->where('condition', $value))
@@ -39,8 +36,9 @@ class CatalogController extends Controller
             'categories' => Category::orderBy('sort_order')
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug', 'parent_id']),
+            'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'filters' => $request->only(
-                'search', 'category', 'language', 'audience', 'condition', 'min_price', 'max_price', 'sort',
+                'search', 'category', 'tag', 'language', 'audience', 'condition', 'min_price', 'max_price', 'sort',
             ),
         ]);
     }
@@ -50,7 +48,7 @@ class CatalogController extends Controller
         abort_unless($book->status === 'available', 404);
 
         return Inertia::render('catalog/show', [
-            'book' => $book->load(['images', 'category']),
+            'book' => $book->load(['images', 'category', 'tags']),
         ]);
     }
 

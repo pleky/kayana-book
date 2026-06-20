@@ -10,6 +10,12 @@ export type BookImage = {
     sort_order: number;
 };
 
+export type Tag = {
+    id: number;
+    name: string;
+    slug: string;
+};
+
 export type Book = {
     id: number;
     title: string;
@@ -30,6 +36,7 @@ export type Book = {
     images?: BookImage[];
     primary_image?: BookImage[];
     category?: BookCategory | null;
+    tags?: Tag[];
 };
 
 export type BookCategory = {

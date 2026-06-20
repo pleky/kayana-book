@@ -213,6 +213,19 @@ export default function BookFormFields({
                 </div>
 
                 <div className="sm:col-span-2">
+                    <Label htmlFor="tags">Tags</Label>
+                    <Input
+                        id="tags"
+                        name="tags"
+                        defaultValue={
+                            book?.tags?.map((t) => t.name).join(', ') ?? ''
+                        }
+                        placeholder="langka, edisi pertama (pisahkan dengan koma)"
+                    />
+                    <InputError className="mt-1" message={errors.tags} />
+                </div>
+
+                <div className="sm:col-span-2">
                     <Label htmlFor="description">Deskripsi</Label>
                     <textarea
                         id="description"

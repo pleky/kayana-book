@@ -20,13 +20,13 @@ export default function SiteHeader() {
     useFlashToasts();
 
     return (
-        <header className="border-b">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 p-4">
+        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md">
+            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
                 <Link
                     href={CatalogController.index()}
-                    className="text-lg font-semibold tracking-tight"
+                    className="font-serif text-xl font-semibold tracking-tight text-foreground"
                 >
-                    Kayana Book
+                    Kayana<span className="text-primary">Book</span>
                 </Link>
                 <nav className="flex items-center gap-2">
                     <Button variant="ghost" asChild>

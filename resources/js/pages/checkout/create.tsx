@@ -38,7 +38,7 @@ export default function Checkout({
                 >
                     {({ processing, errors }) => (
                         <>
-                            <h1 className="text-2xl font-semibold tracking-tight">
+                            <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
                                 Data pemesan
                             </h1>
 
@@ -74,31 +74,34 @@ export default function Checkout({
 
                             <div className="space-y-2">
                                 <Label>Pengambilan</Label>
-                                <div className="flex gap-4 text-sm">
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="radio"
-                                            name="fulfillment"
-                                            value="pickup"
-                                            checked={fulfillment === 'pickup'}
-                                            onChange={() =>
-                                                setFulfillment('pickup')
-                                            }
-                                        />
-                                        Ambil di toko
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="radio"
-                                            name="fulfillment"
-                                            value="ship"
-                                            checked={fulfillment === 'ship'}
-                                            onChange={() =>
-                                                setFulfillment('ship')
-                                            }
-                                        />
-                                        Kirim
-                                    </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {(
+                                        [
+                                            ['pickup', 'Ambil di toko'],
+                                            ['ship', 'Kirim'],
+                                        ] as const
+                                    ).map(([value, label]) => (
+                                        <label
+                                            key={value}
+                                            className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${
+                                                fulfillment === value
+                                                    ? 'border-primary bg-primary/5 text-foreground'
+                                                    : 'border-border hover:bg-accent/40'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="fulfillment"
+                                                value={value}
+                                                checked={fulfillment === value}
+                                                onChange={() =>
+                                                    setFulfillment(value)
+                                                }
+                                                className="accent-primary"
+                                            />
+                                            {label}
+                                        </label>
+                                    ))}
                                 </div>
                                 <InputError message={errors.fulfillment} />
                             </div>
@@ -130,14 +133,16 @@ export default function Checkout({
                                 size="lg"
                                 disabled={processing}
                             >
-                                Buat pesanan
+                                {processing ? 'Memproses…' : 'Buat pesanan'}
                             </Button>
                         </>
                     )}
                 </Form>
 
-                <aside className="h-fit space-y-3 rounded-xl border p-4">
-                    <h2 className="font-medium">Ringkasan</h2>
+                <aside className="h-fit space-y-3 rounded-xl border border-border bg-card p-4 md:sticky md:top-20">
+                    <h2 className="font-serif text-lg font-semibold">
+                        Ringkasan
+                    </h2>
                     <ul className="space-y-1 text-sm">
                         {items.map((item) => (
                             <li

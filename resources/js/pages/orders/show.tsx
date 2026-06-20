@@ -42,9 +42,9 @@ export default function OrderShow({
             <Head title={`Pesanan #${order.id}`} />
             <SiteHeader />
 
-            <main className="mx-auto max-w-2xl space-y-6 p-4">
+            <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
                         Pesanan #{order.id}
                     </h1>
                     <Badge variant={STATUS_VARIANT[order.status]}>
@@ -102,8 +102,8 @@ export default function OrderShow({
                     </p>
                 )}
 
-                <section className="rounded-xl border">
-                    <ul className="divide-y">
+                <section className="rounded-xl border border-border bg-card">
+                    <ul className="divide-y divide-border">
                         {order.items?.map((item) => (
                             <li
                                 key={item.id}

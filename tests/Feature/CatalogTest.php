@@ -2,6 +2,7 @@
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\Tag;
 use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\get;
@@ -95,4 +96,50 @@ it('hides a sold book detail', function () {
     $book = Book::factory()->sold()->create();
 
     get(route('catalog.show', $book))->assertNotFound();
+});
+
+it('filters by tag slug', function () {
+    $tag = Tag::factory()->create(['slug' => 'langka']);
+    $tagged = Book::factory()->create();
+    $tagged->tags()->attach($tag);
+    Book::factory()->create();
+
+    get(route('catalog.index', ['tag' => 'langka']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+    );
+});
+
+it('searches full-text across description and isbn', function () {
+    Book::factory()->create([
+        'title' => 'Alfa',
+        'author' => 'Penulis Satu',
+        'description' => 'Kisah astronaut menjelajah galaksi.',
+        'isbn' => null,
+    ]);
+    Book::factory()->create([
+        'title' => 'Beta',
+        'author' => 'Penulis Dua',
+        'description' => 'Resep masakan nusantara.',
+        'isbn' => '9789790000001',
+    ]);
+
+    get(route('catalog.index', ['search' => 'astronaut']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+            ->where('books.data.0.title', 'Alfa')
+    );
+
+    get(route('catalog.index', ['search' => '9789790000001']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+            ->where('books.data.0.title', 'Beta')
+    );
+});
+
+it('matches search by word prefix', function () {
+    Book::factory()->create(['title' => 'Petualangan Sherina', 'author' => 'Mira']);
+    Book::factory()->create(['title' => 'Bumi Manusia', 'author' => 'Pram']);
+
+    get(route('catalog.index', ['search' => 'petual']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 1)
+            ->where('books.data.0.title', 'Petualangan Sherina')
+    );
 });

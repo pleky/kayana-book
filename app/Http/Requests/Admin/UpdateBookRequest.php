@@ -48,6 +48,7 @@ class UpdateBookRequest extends FormRequest
             'language' => ['required', Rule::in(['id', 'en', 'lainnya'])],
             'audience' => ['required', Rule::in(['anak', 'remaja', 'dewasa', 'umum'])],
             'status' => ['required', Rule::in(['available', 'reserved', 'sold'])],
+            'tags' => ['nullable', 'string', 'max:500'],
             'photos' => ['nullable', 'array', 'max:8'],
             'photos.*' => ['image', 'max:5120'],
         ];

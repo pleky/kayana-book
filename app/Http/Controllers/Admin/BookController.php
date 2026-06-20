@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreBookRequest;
 use App\Http\Requests\Admin\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -53,10 +54,11 @@ class BookController extends Controller
 
         $book = DB::transaction(function () use ($data, $request): Book {
             $book = Book::create([
-                ...collect($data)->except('photos')->all(),
+                ...collect($data)->except(['photos', 'tags'])->all(),
                 'slug' => $this->uniqueSlug($data['title']),
             ]);
 
+            $this->syncTags($book, $data['tags'] ?? null);
             $this->storePhotos($book, $request->file('photos', []));
 
             return $book;
@@ -69,7 +71,7 @@ class BookController extends Controller
     public function edit(Book $book): Response
     {
         return Inertia::render('admin/books/edit', [
-            'book' => $book->load('images'),
+            'book' => $book->load(['images', 'tags']),
             'categories' => Category::orderBy('sort_order')->get(['id', 'name']),
         ]);
     }
@@ -85,8 +87,9 @@ class BookController extends Controller
                 $data['sold_at'] = null;
             }
 
-            $book->update(collect($data)->except('photos')->all());
+            $book->update(collect($data)->except(['photos', 'tags'])->all());
 
+            $this->syncTags($book, $data['tags'] ?? null);
             $this->storePhotos($book, $request->file('photos', []));
         });
 
@@ -98,6 +101,17 @@ class BookController extends Controller
         $book->delete();
 
         return to_route('admin.books.index')->with('success', 'Buku dihapus.');
+    }
+
+    /**
+     * Sync a book's tags from a comma-separated list of names, creating any
+     * tags that do not yet exist.
+     */
+    private function syncTags(Book $book, ?string $tags): void
+    {
+        $names = array_filter(array_map('trim', explode(',', (string) $tags)));
+
+        $book->tags()->sync(Tag::fromNames($names)->pluck('id'));
     }
 
     /**

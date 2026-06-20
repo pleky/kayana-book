@@ -47,6 +47,7 @@ class StoreBookRequest extends FormRequest
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'language' => ['required', Rule::in(['id', 'en', 'lainnya'])],
             'audience' => ['required', Rule::in(['anak', 'remaja', 'dewasa', 'umum'])],
+            'tags' => ['nullable', 'string', 'max:500'],
             'photos' => ['required', 'array', 'min:1', 'max:8'],
             'photos.*' => ['image', 'max:5120'],
         ];

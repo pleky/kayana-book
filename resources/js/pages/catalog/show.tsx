@@ -1,4 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import { ArrowLeft, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import CartController from '@/actions/App/Http/Controllers/CartController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
@@ -32,23 +33,28 @@ export default function BookDetail({ book }: { book: Book }) {
             <Head title={book.title} />
             <SiteHeader />
 
-            <main className="mx-auto max-w-5xl p-4">
+            <main className="mx-auto max-w-5xl px-4 py-8">
                 <Link
                     href={CatalogController.index()}
-                    className="text-sm text-muted-foreground hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    ← Kembali ke katalog
+                    <ArrowLeft className="size-4" />
+                    Kembali ke katalog
                 </Link>
 
-                <div className="mt-4 grid gap-8 md:grid-cols-2">
-                    <div className="space-y-3">
-                        <div className="aspect-3/4 overflow-hidden rounded-xl border bg-muted">
-                            {active && (
+                <div className="mt-6 grid gap-8 md:grid-cols-2">
+                    <div className="space-y-3 md:sticky md:top-20 md:self-start">
+                        <div className="aspect-3/4 overflow-hidden rounded-xl border border-border bg-muted">
+                            {active ? (
                                 <img
                                     src={`/storage/${active}`}
-                                    alt={book.title}
+                                    alt={`Sampul ${book.title}`}
                                     className="size-full object-cover"
                                 />
+                            ) : (
+                                <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
+                                    Tanpa foto
+                                </div>
                             )}
                         </div>
                         {images.length > 1 && (
@@ -58,10 +64,10 @@ export default function BookDetail({ book }: { book: Book }) {
                                         key={img.id}
                                         type="button"
                                         onClick={() => setActive(img.path)}
-                                        className={`size-16 overflow-hidden rounded-md border ${
+                                        className={`size-16 cursor-pointer overflow-hidden rounded-md border border-border transition ${
                                             active === img.path
-                                                ? 'ring-2 ring-ring'
-                                                : ''
+                                                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                                                : 'opacity-70 hover:opacity-100'
                                         }`}
                                     >
                                         <img
@@ -88,7 +94,7 @@ export default function BookDetail({ book }: { book: Book }) {
                             )}
                         </div>
 
-                        <h1 className="text-2xl font-semibold tracking-tight">
+                        <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
                             {book.title}
                         </h1>
                         {book.author && (
@@ -97,14 +103,34 @@ export default function BookDetail({ book }: { book: Book }) {
                             </p>
                         )}
 
-                        <p className="text-2xl font-bold">
+                        <p className="text-3xl font-bold text-primary">
                             {rupiah.format(book.price)}
                         </p>
 
                         {book.description && (
-                            <p className="text-sm leading-relaxed whitespace-pre-line">
+                            <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
                                 {book.description}
                             </p>
+                        )}
+
+                        {(book.tags?.length ?? 0) > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {book.tags?.map((tag) => (
+                                    <Link
+                                        key={tag.id}
+                                        href={CatalogController.index({
+                                            query: { tag: tag.slug },
+                                        })}
+                                    >
+                                        <Badge
+                                            variant="outline"
+                                            className="transition-colors hover:bg-accent"
+                                        >
+                                            #{tag.name}
+                                        </Badge>
+                                    </Link>
+                                ))}
+                            </div>
                         )}
 
                         <dl className="grid grid-cols-2 gap-2 text-sm">
@@ -128,10 +154,18 @@ export default function BookDetail({ book }: { book: Book }) {
                                     className="w-full"
                                     disabled={processing}
                                 >
-                                    Tambah ke keranjang
+                                    <ShoppingCart className="size-4" />
+                                    {processing
+                                        ? 'Menambahkan…'
+                                        : 'Tambah ke keranjang'}
                                 </Button>
                             )}
                         </Form>
+
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <ShieldCheck className="size-4 text-primary" />
+                            Eksemplar unik — diamankan untukmu saat checkout.
+                        </p>
                     </div>
                 </div>
             </main>

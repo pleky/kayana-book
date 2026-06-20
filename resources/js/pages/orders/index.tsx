@@ -34,17 +34,17 @@ export default function Orders({ orders }: { orders: Paginated<Order> }) {
             <Head title="Pesanan Saya" />
             <SiteHeader />
 
-            <main className="mx-auto max-w-3xl p-4">
-                <h1 className="mb-4 text-2xl font-semibold tracking-tight">
+            <main className="mx-auto max-w-3xl px-4 py-8">
+                <h1 className="mb-6 font-serif text-3xl font-semibold tracking-tight text-foreground">
                     Pesanan Saya
                 </h1>
 
                 {orders.data.length === 0 ? (
-                    <p className="rounded-xl border p-8 text-center text-muted-foreground">
+                    <p className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center text-muted-foreground">
                         Belum ada pesanan.
                     </p>
                 ) : (
-                    <ul className="divide-y rounded-xl border">
+                    <ul className="divide-y divide-border rounded-xl border border-border bg-card">
                         {orders.data.map((order) => (
                             <li
                                 key={order.id}

@@ -42,17 +42,20 @@ export default function Cart({
             <Head title="Keranjang" />
             <SiteHeader />
 
-            <main className="mx-auto max-w-3xl p-4">
-                <h1 className="mb-4 text-2xl font-semibold tracking-tight">
+            <main className="mx-auto max-w-3xl px-4 py-8">
+                <h1 className="mb-6 font-serif text-3xl font-semibold tracking-tight text-foreground">
                     Keranjang
                 </h1>
 
                 {items.length === 0 ? (
-                    <div className="rounded-xl border p-8 text-center">
-                        <p className="text-muted-foreground">
+                    <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
+                        <p className="font-serif text-lg text-foreground">
                             Keranjang masih kosong.
                         </p>
-                        <Button asChild className="mt-4">
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Temukan buku yang menunggu pembaca barunya.
+                        </p>
+                        <Button asChild className="mt-5">
                             <Link href={CatalogController.index()}>
                                 Jelajahi katalog
                             </Link>
@@ -60,7 +63,7 @@ export default function Cart({
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <ul className="divide-y rounded-xl border">
+                        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
                             {items.map((item) => (
                                 <li
                                     key={item.id}
@@ -112,12 +115,12 @@ export default function Cart({
                             ))}
                         </ul>
 
-                        <div className="flex items-center justify-between rounded-xl border p-4">
+                        <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">
                                     Subtotal
                                 </p>
-                                <p className="text-xl font-bold">
+                                <p className="text-2xl font-bold text-primary">
                                     {rupiah.format(subtotal)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">

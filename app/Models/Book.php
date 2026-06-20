@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -54,6 +55,14 @@ class Book extends Model
     }
 
     /**
+     * @return BelongsToMany<Tag, $this>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
+    }
+
+    /**
      * @return HasMany<BookImage, $this>
      */
     public function images(): HasMany
@@ -75,6 +84,28 @@ class Book extends Model
     public function scopeAvailable(Builder $query): void
     {
         $query->where('status', 'available');
+    }
+
+    /**
+     * Full-text search across title, author, description and ISBN using the
+     * generated `searchable` tsvector. Each word is matched as a prefix so
+     * partial typing still returns results.
+     *
+     * @param  Builder<Book>  $query
+     */
+    public function scopeSearch(Builder $query, string $term): void
+    {
+        $tsquery = collect(preg_split('/\s+/', trim($term)) ?: [])
+            ->map(fn (string $word): string => preg_replace('/[^\p{L}\p{N}]/u', '', $word) ?? '')
+            ->filter()
+            ->map(fn (string $word): string => $word.':*')
+            ->implode(' & ');
+
+        if ($tsquery === '') {
+            return;
+        }
+
+        $query->whereRaw("searchable @@ to_tsquery('simple', ?)", [$tsquery]);
     }
 
     public function getRouteKeyName(): string
