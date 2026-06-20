@@ -1,5 +1,13 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    BookCopy,
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    Library,
+} from 'lucide-react';
+import AdminBookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -14,13 +22,26 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { Auth, NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Katalog',
+        href: CatalogController.index(),
+        icon: Library,
+    },
+];
+
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Kelola Buku',
+        href: AdminBookController.index(),
+        icon: BookCopy,
     },
 ];
 
@@ -38,6 +59,11 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const mainNavItems = auth.user?.is_admin
+        ? [...baseNavItems, ...adminNavItems]
+        : baseNavItems;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
