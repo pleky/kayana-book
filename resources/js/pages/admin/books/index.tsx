@@ -62,7 +62,7 @@ export default function BooksIndex({
                         name="status"
                         defaultValue={filters.status ?? ''}
                         onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                        className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                        className="h-9 rounded-md border border-input bg-card px-3 text-sm"
                     >
                         <option value="">Semua status</option>
                         <option value="available">Tersedia</option>
@@ -72,9 +72,9 @@ export default function BooksIndex({
                     <Button variant="secondary">Cari</Button>
                 </Form>
 
-                <div className="overflow-x-auto rounded-xl border">
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
                     <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50 text-left">
+                        <thead className="border-b border-border bg-muted/50 text-left text-muted-foreground">
                             <tr>
                                 <th className="p-3 font-medium">Buku</th>
                                 <th className="p-3 font-medium">Harga</th>
@@ -99,7 +99,7 @@ export default function BooksIndex({
                                 return (
                                     <tr
                                         key={book.id}
-                                        className="border-b last:border-0"
+                                        className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
                                     >
                                         <td className="p-3">
                                             <div className="flex items-center gap-3">
@@ -153,6 +153,7 @@ export default function BooksIndex({
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                className="text-destructive"
                                                 onClick={() => {
                                                     if (
                                                         confirm(

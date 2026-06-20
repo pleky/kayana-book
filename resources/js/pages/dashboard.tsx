@@ -1,4 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    BookCheck,
+    BookOpen,
+    CalendarDays,
+    Clock,
+    TrendingUp,
+    Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,16 +48,35 @@ type Metrics = {
     recent_orders: Order[];
 };
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+    label,
+    value,
+    icon: Icon,
+    accent = false,
+}: {
+    label: string;
+    value: string;
+    icon: LucideIcon;
+    accent?: boolean;
+}) {
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                     {label}
                 </CardTitle>
+                <span className="inline-flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="size-4" />
+                </span>
             </CardHeader>
             <CardContent>
-                <p className="text-2xl font-bold">{value}</p>
+                <p
+                    className={`font-serif text-2xl font-bold ${
+                        accent ? 'text-primary' : 'text-foreground'
+                    }`}
+                >
+                    {value}
+                </p>
             </CardContent>
         </Card>
     );
@@ -76,18 +104,24 @@ export default function Dashboard({ metrics }: { metrics: Metrics | null }) {
                     <Stat
                         label="Omzet hari ini"
                         value={rupiah.format(metrics.revenue_today)}
+                        icon={Wallet}
+                        accent
                     />
                     <Stat
                         label="Omzet bulan ini"
                         value={rupiah.format(metrics.revenue_month)}
+                        icon={TrendingUp}
+                        accent
                     />
                     <Stat
                         label="Perlu konfirmasi"
                         value={`${metrics.orders_pending} pesanan`}
+                        icon={Clock}
                     />
                     <Stat
                         label="Stok tersedia"
                         value={`${metrics.books_available} buku`}
+                        icon={BookOpen}
                     />
                 </div>
 
@@ -95,16 +129,20 @@ export default function Dashboard({ metrics }: { metrics: Metrics | null }) {
                     <Stat
                         label="Buku terjual"
                         value={`${metrics.books_sold}`}
+                        icon={BookCheck}
                     />
                     <Stat
                         label="Dibayar (belum selesai)"
                         value={`${metrics.orders_paid} pesanan`}
+                        icon={CalendarDays}
                     />
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Pesanan terbaru</CardTitle>
+                        <CardTitle className="font-serif text-lg">
+                            Pesanan terbaru
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {metrics.recent_orders.length === 0 ? (

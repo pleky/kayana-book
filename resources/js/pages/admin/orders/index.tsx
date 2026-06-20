@@ -54,7 +54,7 @@ export default function AdminOrders({
                             { preserveState: true },
                         )
                     }
-                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                    className="h-9 rounded-md border border-input bg-card px-3 text-sm"
                 >
                     <option value="">Semua status</option>
                     <option value="pending">Menunggu bayar</option>
@@ -63,9 +63,9 @@ export default function AdminOrders({
                     <option value="cancelled">Dibatalkan</option>
                 </select>
 
-                <div className="overflow-x-auto rounded-xl border">
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
                     <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50 text-left">
+                        <thead className="border-b border-border bg-muted/50 text-left text-muted-foreground">
                             <tr>
                                 <th className="p-3 font-medium">#</th>
                                 <th className="p-3 font-medium">Pelanggan</th>
@@ -89,7 +89,7 @@ export default function AdminOrders({
                             {orders.data.map((order) => (
                                 <tr
                                     key={order.id}
-                                    className="border-b last:border-0"
+                                    className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
                                 >
                                     <td className="p-3">{order.id}</td>
                                     <td className="p-3">

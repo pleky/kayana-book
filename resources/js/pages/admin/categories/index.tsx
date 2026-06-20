@@ -72,7 +72,7 @@ export default function Categories({
                     </Button>
                 </div>
 
-                <ul className="divide-y rounded-xl border">
+                <ul className="divide-y divide-border rounded-xl border border-border bg-card">
                     {roots.length === 0 && (
                         <li className="p-6 text-center text-muted-foreground">
                             Belum ada kategori.
@@ -80,7 +80,7 @@ export default function Categories({
                     )}
                     {roots.map((root) => (
                         <li key={root.id}>
-                            <ul className="divide-y">
+                            <ul className="divide-y divide-border">
                                 {row(root)}
                                 {childrenOf(root.id).map((child) =>
                                     row(child, true),
