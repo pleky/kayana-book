@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import CartController from '@/actions/App/Http/Controllers/CartController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import SiteHeader from '@/components/catalog/site-header';
 import { Badge } from '@/components/ui/badge';
@@ -117,9 +118,20 @@ export default function BookDetail({ book }: { book: Book }) {
                             )}
                         </dl>
 
-                        <Button size="lg" disabled className="w-full">
-                            Pemesanan segera hadir
-                        </Button>
+                        <Form
+                            {...CartController.store.form(book.slug)}
+                            options={{ preserveScroll: true }}
+                        >
+                            {({ processing }) => (
+                                <Button
+                                    size="lg"
+                                    className="w-full"
+                                    disabled={processing}
+                                >
+                                    Tambah ke keranjang
+                                </Button>
+                            )}
+                        </Form>
                     </div>
                 </div>
             </main>

@@ -38,6 +38,35 @@ export type BookCategory = {
     slug?: string;
 };
 
+export type OrderStatus = 'pending' | 'paid' | 'completed' | 'cancelled';
+export type Fulfillment = 'pickup' | 'ship';
+
+export type OrderItem = {
+    id: number;
+    title: string;
+    price: number;
+    book_id: number | null;
+};
+
+export type Order = {
+    id: number;
+    status: OrderStatus;
+    subtotal: number;
+    shipping_cost: number;
+    total: number;
+    customer_name: string;
+    customer_phone: string;
+    fulfillment: Fulfillment;
+    shipping_address: string | null;
+    payment_method: string;
+    expires_at: string | null;
+    cancel_reason: string | null;
+    paid_at: string | null;
+    created_at: string;
+    items?: OrderItem[];
+    items_count?: number;
+};
+
 export type Paginated<T> = {
     data: T[];
     current_page: number;
