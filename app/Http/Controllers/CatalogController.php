@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,29 +16,31 @@ class CatalogController extends Controller
         $books = Book::query()
             ->available()
             ->with('primaryImage')
-            ->when($request->string('search')->trim()->value(), function ($query, string $search): void {
-                $query->where(function ($query) use ($search): void {
+            ->when($request->string('search')->trim()->value(), function (Builder $query, string $search): void {
+                $query->where(function (Builder $query) use ($search): void {
                     $query->where('title', 'ilike', "%{$search}%")
                         ->orWhere('author', 'ilike', "%{$search}%");
                 });
             })
-            ->when($request->string('category')->trim()->value(), function ($query, string $slug): void {
-                $query->whereHas('category', fn ($query) => $query->where('slug', $slug));
+            ->when($request->string('category')->trim()->value(), function (Builder $query, string $slug): void {
+                $this->filterByCategory($query, $slug);
             })
-            ->when($request->string('language')->trim()->value(), fn ($query, string $value) => $query->where('language', $value))
-            ->when($request->string('audience')->trim()->value(), fn ($query, string $value) => $query->where('audience', $value))
-            ->when($request->string('condition')->trim()->value(), fn ($query, string $value) => $query->where('condition', $value))
-            ->when($request->integer('min_price'), fn ($query, int $value) => $query->where('price', '>=', $value))
-            ->when($request->integer('max_price'), fn ($query, int $value) => $query->where('price', '<=', $value))
-            ->latest()
+            ->when($request->string('language')->trim()->value(), fn (Builder $query, string $value) => $query->where('language', $value))
+            ->when($request->string('audience')->trim()->value(), fn (Builder $query, string $value) => $query->where('audience', $value))
+            ->when($request->string('condition')->trim()->value(), fn (Builder $query, string $value) => $query->where('condition', $value))
+            ->when($request->integer('min_price'), fn (Builder $query, int $value) => $query->where('price', '>=', $value))
+            ->when($request->integer('max_price'), fn (Builder $query, int $value) => $query->where('price', '<=', $value))
+            ->tap(fn (Builder $query) => $this->applySort($query, $request->string('sort')->value()))
             ->paginate(24)
             ->withQueryString();
 
         return Inertia::render('catalog/index', [
             'books' => $books,
-            'categories' => Category::orderBy('sort_order')->get(['id', 'name', 'slug']),
+            'categories' => Category::orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'parent_id']),
             'filters' => $request->only(
-                'search', 'category', 'language', 'audience', 'condition', 'min_price', 'max_price',
+                'search', 'category', 'language', 'audience', 'condition', 'min_price', 'max_price', 'sort',
             ),
         ]);
     }
@@ -49,5 +52,38 @@ class CatalogController extends Controller
         return Inertia::render('catalog/show', [
             'book' => $book->load(['images', 'category']),
         ]);
+    }
+
+    /**
+     * Filter by a category slug. When the slug points at a root category, its
+     * sub-categories are included too.
+     *
+     * @param  Builder<Book>  $query
+     */
+    private function filterByCategory(Builder $query, string $slug): void
+    {
+        $category = Category::where('slug', $slug)->first();
+
+        if ($category === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $ids = [$category->id, ...$category->children()->pluck('id')->all()];
+
+        $query->whereIn('category_id', $ids);
+    }
+
+    /**
+     * @param  Builder<Book>  $query
+     */
+    private function applySort(Builder $query, ?string $sort): void
+    {
+        match ($sort) {
+            'price_asc' => $query->orderBy('price'),
+            'price_desc' => $query->orderByDesc('price'),
+            default => $query->latest(),
+        };
     }
 }

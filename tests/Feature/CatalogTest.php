@@ -28,6 +28,27 @@ it('filters by category slug', function () {
     );
 });
 
+it('includes sub-category books when filtering by a root category', function () {
+    $root = Category::factory()->create(['slug' => 'fiksi', 'parent_id' => null]);
+    $child = Category::factory()->create(['parent_id' => $root->id]);
+    Book::factory()->create(['category_id' => $root->id]);
+    Book::factory()->create(['category_id' => $child->id]);
+    Book::factory()->create(); // uncategorised, excluded
+
+    get(route('catalog.index', ['category' => 'fiksi']))->assertInertia(
+        fn (Assert $page) => $page->has('books.data', 2)
+    );
+});
+
+it('sorts by cheapest price first', function () {
+    Book::factory()->create(['price' => 90000]);
+    Book::factory()->create(['price' => 15000]);
+
+    get(route('catalog.index', ['sort' => 'price_asc']))->assertInertia(
+        fn (Assert $page) => $page->where('books.data.0.price', 15000)
+    );
+});
+
 it('filters by condition', function () {
     Book::factory()->create(['condition' => 'like_new']);
     Book::factory()->create(['condition' => 'poor']);

@@ -32,6 +32,7 @@ type Filters = {
     condition?: string;
     min_price?: string;
     max_price?: string;
+    sort?: string;
 };
 
 export default function Catalog({
@@ -43,6 +44,10 @@ export default function Catalog({
     categories: BookCategory[];
     filters: Filters;
 }) {
+    const roots = categories.filter((c) => !c.parent_id);
+    const childrenOf = (id: number) =>
+        categories.filter((c) => c.parent_id === id);
+
     return (
         <div className="min-h-screen bg-background">
             <Head title="Katalog Buku" />
@@ -66,6 +71,24 @@ export default function Catalog({
                         </div>
 
                         <div>
+                            <Label htmlFor="sort">Urutkan</Label>
+                            <select
+                                id="sort"
+                                name="sort"
+                                defaultValue={filters.sort ?? ''}
+                                className={selectClass}
+                            >
+                                <option value="">Terbaru</option>
+                                <option value="price_asc">
+                                    Harga termurah
+                                </option>
+                                <option value="price_desc">
+                                    Harga termahal
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
                             <Label htmlFor="category">Kategori</Label>
                             <select
                                 id="category"
@@ -74,10 +97,20 @@ export default function Catalog({
                                 className={selectClass}
                             >
                                 <option value="">Semua</option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.slug}>
-                                        {c.name}
-                                    </option>
+                                {roots.map((root) => (
+                                    <optgroup key={root.id} label={root.name}>
+                                        <option value={root.slug}>
+                                            Semua {root.name}
+                                        </option>
+                                        {childrenOf(root.id).map((child) => (
+                                            <option
+                                                key={child.id}
+                                                value={child.slug}
+                                            >
+                                                {child.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
                                 ))}
                             </select>
                         </div>

@@ -36,6 +36,9 @@ export type BookCategory = {
     id: number;
     name: string;
     slug?: string;
+    parent_id?: number | null;
+    sort_order?: number;
+    books_count?: number;
 };
 
 export type OrderStatus = 'pending' | 'paid' | 'completed' | 'cancelled';

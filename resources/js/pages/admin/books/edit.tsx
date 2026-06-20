@@ -1,5 +1,6 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
 import BookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import BookImageController from '@/actions/App/Http/Controllers/Admin/BookImageController';
 import BookFormFields from '@/components/admin/book-form-fields';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -33,19 +34,66 @@ export default function EditBook({
                 <Heading title="Edit Buku" description={book.title} />
 
                 {book.images && book.images.length > 0 && (
-                    <div className="mb-6 flex flex-wrap gap-2">
+                    <div className="mb-6 flex flex-wrap gap-3">
                         {book.images.map((img) => (
-                            <div key={img.id} className="relative">
-                                <img
-                                    src={`/storage/${img.path}`}
-                                    alt={book.title}
-                                    className="size-24 rounded-md border object-cover"
-                                />
-                                {img.is_primary && (
-                                    <Badge className="absolute top-1 left-1">
-                                        Utama
-                                    </Badge>
-                                )}
+                            <div key={img.id} className="w-24 space-y-1">
+                                <div className="relative">
+                                    <img
+                                        src={`/storage/${img.path}`}
+                                        alt={book.title}
+                                        className="size-24 rounded-md border object-cover"
+                                    />
+                                    {img.is_primary && (
+                                        <Badge className="absolute top-1 left-1">
+                                            Utama
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    {!img.is_primary && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 px-1 text-xs"
+                                            onClick={() =>
+                                                router.patch(
+                                                    BookImageController.setPrimary(
+                                                        {
+                                                            book: book.slug,
+                                                            image: img.id,
+                                                        },
+                                                    ).url,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            Jadikan utama
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-1 text-xs text-destructive"
+                                        onClick={() => {
+                                            if (confirm('Hapus foto ini?')) {
+                                                router.delete(
+                                                    BookImageController.destroy(
+                                                        {
+                                                            book: book.slug,
+                                                            image: img.id,
+                                                        },
+                                                    ).url,
+                                                    { preserveScroll: true },
+                                                );
+                                            }
+                                        }}
+                                    >
+                                        Hapus
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>

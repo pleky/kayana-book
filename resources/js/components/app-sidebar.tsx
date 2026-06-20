@@ -6,8 +6,10 @@ import {
     LayoutGrid,
     Library,
     ReceiptText,
+    Tags,
 } from 'lucide-react';
 import AdminBookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import AdminCategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import AppLogo from '@/components/app-logo';
@@ -49,6 +51,11 @@ const adminNavItems: NavItem[] = [
         title: 'Pesanan Masuk',
         href: AdminOrderController.index(),
         icon: ReceiptText,
+    },
+    {
+        title: 'Kategori',
+        href: AdminCategoryController.index(),
+        icon: Tags,
     },
 ];
 

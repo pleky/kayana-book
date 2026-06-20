@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\BookImageController as AdminBookImageController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
@@ -35,6 +37,9 @@ Route::middleware(['auth', 'verified', 'can:admin'])
     ->name('admin.')
     ->group(function () {
         Route::resource('books', AdminBookController::class)->except('show');
+        Route::delete('books/{book}/images/{image}', [AdminBookImageController::class, 'destroy'])->name('books.images.destroy');
+        Route::patch('books/{book}/images/{image}/primary', [AdminBookImageController::class, 'setPrimary'])->name('books.images.primary');
+        Route::resource('categories', AdminCategoryController::class)->except('show');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
