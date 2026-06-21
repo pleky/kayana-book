@@ -1,11 +1,33 @@
 import { Head, Link } from '@inertiajs/react';
-import { BookOpen, Camera, ShieldCheck, Wallet } from 'lucide-react';
+import {
+    Atom,
+    Baby,
+    BookHeart,
+    BookOpen,
+    BookText,
+    Brain,
+    Briefcase,
+    Camera,
+    GraduationCap,
+    Landmark,
+    Languages,
+    Rocket,
+    ScrollText,
+    Search,
+    ShieldCheck,
+    Sparkles,
+    Sprout,
+    UserRound,
+    Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import SiteHeader from '@/components/catalog/site-header';
 import { Reveal } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
+import type { BookCategory } from '@/types';
 
 const TRUST = [
     {
@@ -40,7 +62,29 @@ const MOTIF = [
     'mt-10 aspect-3/4 bg-primary/15',
 ];
 
-export default function Welcome() {
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+    novel: BookText,
+    sastra: ScrollText,
+    'fantasi-sci-fi': Rocket,
+    'misteri-thriller': Search,
+    'komik-manga': Sparkles,
+    biografi: UserRound,
+    sejarah: Landmark,
+    'pengembangan-diri': Sprout,
+    'bisnis-ekonomi': Briefcase,
+    'agama-religi': BookHeart,
+    'sains-teknologi': Atom,
+    'psikologi-filsafat': Brain,
+    'buku-pelajaran-kuliah': GraduationCap,
+    'kamus-bahasa': Languages,
+    'buku-anak': Baby,
+};
+
+export default function Welcome({
+    categories,
+}: {
+    categories: BookCategory[];
+}) {
     const progressRef = useRef<HTMLDivElement>(null);
     const parallaxRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +234,63 @@ export default function Welcome() {
                         </div>
                     </div>
                 </section>
+
+                {/* ---------- Categories ---------- */}
+                {categories.length > 0 && (
+                    <section className="border-t border-border/60">
+                        <div className="mx-auto max-w-6xl px-4 py-16">
+                            <Reveal className="mb-8">
+                                <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
+                                    Jelajahi kategori
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Genre dengan koleksi terbanyak.
+                                </p>
+                            </Reveal>
+
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                                {categories.map((category, i) => {
+                                    const Icon =
+                                        CATEGORY_ICON[category.slug ?? ''] ??
+                                        BookOpen;
+
+                                    return (
+                                        <Reveal
+                                            key={category.id}
+                                            delay={Math.min(i, 9) * 45}
+                                            className="h-full"
+                                        >
+                                            <Link
+                                                href={CatalogController.index({
+                                                    query: {
+                                                        category: category.slug,
+                                                    },
+                                                })}
+                                                className="group flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                                            >
+                                                <span
+                                                    className={`inline-flex size-10 items-center justify-center rounded-lg ${CHIP[i % CHIP.length]}`}
+                                                >
+                                                    <Icon className="size-5" />
+                                                </span>
+                                                <div>
+                                                    <h3 className="font-serif font-medium text-foreground">
+                                                        {category.name}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {category.books_count ??
+                                                            0}{' '}
+                                                        buku
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        </Reveal>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 {/* ---------- Trust ---------- */}
                 <section className="border-t border-border/60 bg-card/40">
