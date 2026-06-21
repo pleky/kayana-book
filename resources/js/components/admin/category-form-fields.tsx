@@ -12,10 +12,12 @@ export default function CategoryFormFields({
     errors,
     parents,
     category,
+    lockedParentId,
 }: {
     errors: Errors;
     parents: BookCategory[];
     category?: BookCategory;
+    lockedParentId?: number | null;
 }) {
     return (
         <div className="space-y-4">
@@ -32,23 +34,27 @@ export default function CategoryFormFields({
                 <InputError className="mt-1" message={errors.name} />
             </div>
 
-            <div>
-                <Label htmlFor="parent_id">Kategori induk</Label>
-                <select
-                    id="parent_id"
-                    name="parent_id"
-                    defaultValue={category?.parent_id ?? ''}
-                    className={selectClass}
-                >
-                    <option value="">— Tingkat atas —</option>
-                    {parents.map((parent) => (
-                        <option key={parent.id} value={parent.id}>
-                            {parent.name}
-                        </option>
-                    ))}
-                </select>
-                <InputError className="mt-1" message={errors.parent_id} />
-            </div>
+            {lockedParentId != null ? (
+                <input type="hidden" name="parent_id" value={lockedParentId} />
+            ) : (
+                <div>
+                    <Label htmlFor="parent_id">Kategori induk</Label>
+                    <select
+                        id="parent_id"
+                        name="parent_id"
+                        defaultValue={category?.parent_id ?? ''}
+                        className={selectClass}
+                    >
+                        <option value="">— Tingkat atas —</option>
+                        {parents.map((parent) => (
+                            <option key={parent.id} value={parent.id}>
+                                {parent.name}
+                            </option>
+                        ))}
+                    </select>
+                    <InputError className="mt-1" message={errors.parent_id} />
+                </div>
+            )}
 
             <div>
                 <Label htmlFor="sort_order">Urutan</Label>

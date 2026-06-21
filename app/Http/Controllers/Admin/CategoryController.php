@@ -8,6 +8,8 @@ use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -67,6 +69,25 @@ class CategoryController extends Controller
         ]);
 
         return to_route('admin.categories.index')->with('success', 'Kategori diperbarui.');
+    }
+
+    /**
+     * Persist a new sibling order: each id's position becomes its sort_order.
+     */
+    public function reorder(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'exists:categories,id'],
+        ]);
+
+        DB::transaction(function () use ($validated): void {
+            foreach ($validated['ids'] as $index => $id) {
+                Category::whereKey($id)->update(['sort_order' => $index]);
+            }
+        });
+
+        return back()->with('success', 'Urutan diperbarui.');
     }
 
     public function destroy(Category $category): RedirectResponse

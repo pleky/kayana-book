@@ -21,6 +21,26 @@ it('blocks non-admins from managing categories', function () {
     get(route('admin.categories.index'))->assertForbidden();
 });
 
+it('reorders categories by persisting sort_order from the given id order', function () {
+    actingAs(categoryAdmin());
+    $a = Category::factory()->create(['sort_order' => 0]);
+    $b = Category::factory()->create(['sort_order' => 1]);
+    $c = Category::factory()->create(['sort_order' => 2]);
+
+    post(route('admin.categories.reorder'), ['ids' => [$c->id, $a->id, $b->id]])
+        ->assertRedirect();
+
+    expect($c->refresh()->sort_order)->toBe(0)
+        ->and($a->refresh()->sort_order)->toBe(1)
+        ->and($b->refresh()->sort_order)->toBe(2);
+});
+
+it('blocks non-admins from reordering categories', function () {
+    actingAs(User::factory()->create(['is_admin' => false]));
+
+    post(route('admin.categories.reorder'), ['ids' => [1]])->assertForbidden();
+});
+
 it('creates a root category with a unique slug', function () {
     actingAs(categoryAdmin());
 

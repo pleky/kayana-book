@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::resource('books', AdminBookController::class)->except('show');
         Route::delete('books/{book}/images/{image}', [AdminBookImageController::class, 'destroy'])->name('books.images.destroy');
         Route::patch('books/{book}/images/{image}/primary', [AdminBookImageController::class, 'setPrimary'])->name('books.images.primary');
+        Route::post('categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
         Route::resource('categories', AdminCategoryController::class)->except('show');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
