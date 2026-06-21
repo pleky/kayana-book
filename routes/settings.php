@@ -13,6 +13,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('settings/addresses', [AddressController::class, 'edit'])->name('addresses.edit');
+    Route::get('settings/addresses/search', [AddressController::class, 'search'])->name('addresses.search');
     Route::post('settings/addresses', [AddressController::class, 'store'])->name('addresses.store');
     Route::put('settings/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
     Route::patch('settings/addresses/{address}/default', [AddressController::class, 'setDefault'])->name('addresses.default');

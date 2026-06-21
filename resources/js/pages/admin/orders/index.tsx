@@ -7,7 +7,8 @@ import type { Order, OrderStatus, Paginated } from '@/types';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
     pending: 'Menunggu bayar',
-    paid: 'Dibayar',
+    paid: 'Diproses',
+    shipped: 'Dikirim',
     completed: 'Selesai',
     cancelled: 'Dibatalkan',
 };
@@ -18,6 +19,7 @@ const STATUS_VARIANT: Record<
 > = {
     pending: 'secondary',
     paid: 'default',
+    shipped: 'default',
     completed: 'outline',
     cancelled: 'destructive',
 };
@@ -58,7 +60,8 @@ export default function AdminOrders({
                 >
                     <option value="">Semua status</option>
                     <option value="pending">Menunggu bayar</option>
-                    <option value="paid">Dibayar</option>
+                    <option value="paid">Diproses</option>
+                    <option value="shipped">Dikirim</option>
                     <option value="completed">Selesai</option>
                     <option value="cancelled">Dibatalkan</option>
                 </select>

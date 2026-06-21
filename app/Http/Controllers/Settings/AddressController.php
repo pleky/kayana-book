@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreAddressRequest;
 use App\Http\Requests\Settings\UpdateAddressRequest;
 use App\Models\UserAddress;
+use App\Services\Shipping\RajaOngkirService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,16 @@ class AddressController extends Controller
                 ->orderByDesc('is_default')
                 ->latest()
                 ->get(),
+        ]);
+    }
+
+    /**
+     * Autocomplete RajaOngkir destinations for the address form.
+     */
+    public function search(Request $request, RajaOngkirService $shipping): JsonResponse
+    {
+        return response()->json([
+            'data' => $shipping->searchDestinations((string) $request->query('q', '')),
         ]);
     }
 
@@ -48,6 +60,10 @@ class AddressController extends Controller
                 $this->promoteDefault($address);
             }
         });
+
+        if ($request->input('redirect_to') === 'checkout') {
+            return to_route('checkout.create')->with('success', 'Alamat disimpan.');
+        }
 
         return to_route('addresses.edit')->with('success', 'Alamat disimpan.');
     }

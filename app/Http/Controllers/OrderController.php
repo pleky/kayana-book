@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\OrderService;
+use App\Services\Payment\MidtransService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,7 +24,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order): Response
+    public function show(Request $request, Order $order, MidtransService $midtrans): Response
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
@@ -34,6 +37,25 @@ class OrderController extends Controller
                 'account_number' => '1234567890',
                 'account_name' => 'Kayana Book',
             ],
+            'payment' => [
+                'gateway_enabled' => $midtrans->configured(),
+                'client_key' => (string) config('services.midtrans.client_key'),
+                'snap_url' => (string) config('services.midtrans.snap_url'),
+            ],
         ]);
+    }
+
+    /**
+     * Buyer confirms the shipped order has arrived, finishing it and notifying
+     * the seller.
+     */
+    public function confirmReceived(Request $request, Order $order, OrderService $orders): RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+        abort_unless($order->status === 'shipped', 422, 'Pesanan belum dikirim.');
+
+        $orders->complete($order);
+
+        return back()->with('success', 'Terima kasih, pesanan selesai.');
     }
 }

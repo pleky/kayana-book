@@ -28,6 +28,8 @@ class UpdateAddressRequest extends FormRequest
             'recipient_phone' => ['required', 'string', 'max:30'],
             'address_line' => ['required', 'string', 'max:1000'],
             'postal_code' => ['nullable', 'string', 'max:10'],
+            'destination_id' => ['nullable', 'integer', 'min:1'],
+            'destination_label' => ['nullable', 'string', 'max:255', 'required_with:destination_id'],
             'is_default' => ['boolean'],
         ];
     }

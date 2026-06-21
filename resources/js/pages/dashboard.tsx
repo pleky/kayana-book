@@ -17,7 +17,8 @@ import type { Order, OrderStatus } from '@/types';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
     pending: 'Menunggu bayar',
-    paid: 'Dibayar',
+    paid: 'Diproses',
+    shipped: 'Dikirim',
     completed: 'Selesai',
     cancelled: 'Dibatalkan',
 };
@@ -28,6 +29,7 @@ const STATUS_VARIANT: Record<
 > = {
     pending: 'secondary',
     paid: 'default',
+    shipped: 'default',
     completed: 'outline',
     cancelled: 'destructive',
 };

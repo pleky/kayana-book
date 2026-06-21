@@ -61,9 +61,22 @@ class OrderController extends Controller
         return back()->with('success', 'Pesanan ditandai lunas.');
     }
 
+    public function ship(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tracking_number' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        abort_unless($order->status === 'paid', 422, 'Hanya pesanan lunas yang bisa ditandai dikirim.');
+
+        $this->orders->markShipped($order, $validated['tracking_number'] ?? null);
+
+        return back()->with('success', 'Pesanan ditandai dikirim.');
+    }
+
     public function complete(Order $order): RedirectResponse
     {
-        abort_unless($order->status === 'paid', 422, 'Hanya pesanan lunas yang bisa diselesaikan.');
+        abort_unless(in_array($order->status, ['paid', 'shipped'], true), 422, 'Hanya pesanan lunas atau dikirim yang bisa diselesaikan.');
 
         $this->orders->complete($order);
 

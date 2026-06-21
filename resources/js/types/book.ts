@@ -61,7 +61,12 @@ export type BookCategory = {
     books_count?: number;
 };
 
-export type OrderStatus = 'pending' | 'paid' | 'completed' | 'cancelled';
+export type OrderStatus =
+    | 'pending'
+    | 'paid'
+    | 'shipped'
+    | 'completed'
+    | 'cancelled';
 export type Fulfillment = 'pickup' | 'ship';
 
 export type OrderItem = {
@@ -81,7 +86,12 @@ export type Order = {
     customer_phone: string;
     fulfillment: Fulfillment;
     shipping_address: string | null;
+    shipping_courier: string | null;
+    shipping_service: string | null;
+    shipping_tracking_number: string | null;
+    shipped_at: string | null;
     payment_method: string;
+    payment_channel: string | null;
     expires_at: string | null;
     cancel_reason: string | null;
     paid_at: string | null;

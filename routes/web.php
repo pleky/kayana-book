@@ -10,6 +10,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -27,11 +28,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('checkout', [CheckoutController::class, 'create'])->name('checkout.create');
+    Route::get('checkout/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
     Route::get('pesanan', [OrderController::class, 'index'])->name('orders.index');
     Route::get('pesanan/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('pesanan/{order}/bayar', [PaymentController::class, 'pay'])->name('orders.pay');
+    Route::post('pesanan/{order}/terima', [OrderController::class, 'confirmReceived'])->name('orders.received');
 });
+
+// Midtrans server-to-server webhook — no auth/CSRF (exempted in bootstrap/app.php).
+Route::post('webhooks/midtrans', [PaymentController::class, 'notify'])->name('payment.notify');
 
 Route::middleware(['auth', 'verified', 'can:admin'])
     ->prefix('admin')
@@ -46,6 +53,7 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::patch('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::post('orders/{order}/pay', [AdminOrderController::class, 'pay'])->name('orders.pay');
+        Route::post('orders/{order}/ship', [AdminOrderController::class, 'ship'])->name('orders.ship');
         Route::post('orders/{order}/complete', [AdminOrderController::class, 'complete'])->name('orders.complete');
         Route::post('orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
     });

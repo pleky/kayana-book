@@ -11,7 +11,8 @@ import type { Order, OrderStatus } from '@/types';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
     pending: 'Menunggu bayar',
-    paid: 'Dibayar',
+    paid: 'Diproses',
+    shipped: 'Dikirim',
     completed: 'Selesai',
     cancelled: 'Dibatalkan',
 };
@@ -22,9 +23,27 @@ const STATUS_VARIANT: Record<
 > = {
     pending: 'secondary',
     paid: 'default',
+    shipped: 'default',
     completed: 'outline',
     cancelled: 'destructive',
 };
+
+/** Build a wa.me deep-link to nudge the buyer with the current status. */
+function waLink(order: Order): string {
+    const phone = order.customer_phone
+        .replace(/[^0-9]/g, '')
+        .replace(/^0/, '62');
+
+    const lines: Record<string, string> = {
+        pending: `Halo ${order.customer_name}, pesanan #${order.id} menunggu pembayaran.`,
+        paid: `Halo ${order.customer_name}, pembayaran pesanan #${order.id} sudah kami terima dan sedang diproses.`,
+        shipped: `Halo ${order.customer_name}, pesanan #${order.id} sudah dikirim${order.shipping_tracking_number ? `, resi ${order.shipping_tracking_number}` : ''}.`,
+        completed: `Halo ${order.customer_name}, terima kasih! Pesanan #${order.id} selesai.`,
+        cancelled: `Halo ${order.customer_name}, pesanan #${order.id} dibatalkan.`,
+    };
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(lines[order.status] ?? '')}`;
+}
 
 const rupiah = new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -150,6 +169,48 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                     )}
                                 </Form>
                             )}
+
+                        {order.status === 'paid' &&
+                            order.fulfillment === 'ship' && (
+                                <Form
+                                    {...AdminOrderController.ship.form(order.id)}
+                                    options={{ preserveScroll: true }}
+                                    className="flex items-end gap-2"
+                                >
+                                    {({ processing, errors }) => (
+                                        <>
+                                            <div className="flex-1">
+                                                <Label htmlFor="tracking_number">
+                                                    No. resi
+                                                </Label>
+                                                <Input
+                                                    id="tracking_number"
+                                                    name="tracking_number"
+                                                    placeholder="mis. JNE0012345678"
+                                                />
+                                                <InputError
+                                                    className="mt-1"
+                                                    message={
+                                                        errors.tracking_number
+                                                    }
+                                                />
+                                            </div>
+                                            <Button disabled={processing}>
+                                                Tandai dikirim
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form>
+                            )}
+
+                        {order.shipping_tracking_number && (
+                            <p>
+                                No. resi:{' '}
+                                <span className="font-mono">
+                                    {order.shipping_tracking_number}
+                                </span>
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -166,12 +227,14 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             Tandai lunas
                         </Button>
                     )}
-                    {order.status === 'paid' && (
+                    {((order.status === 'paid' &&
+                        order.fulfillment === 'pickup') ||
+                        order.status === 'shipped') && (
                         <Button
                             onClick={() =>
                                 confirmPost(
                                     AdminOrderController.complete(order.id).url,
-                                    'Tandai pesanan selesai (diserahkan/dikirim)?',
+                                    'Tandai pesanan selesai?',
                                 )
                             }
                         >
@@ -193,6 +256,17 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                 Batalkan
                             </Button>
                         )}
+                    {order.status !== 'cancelled' && (
+                        <Button variant="outline" asChild>
+                            <a
+                                href={waLink(order)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Kabari via WA
+                            </a>
+                        </Button>
+                    )}
                     <Button variant="outline" asChild>
                         <Link href={AdminOrderController.index()}>Kembali</Link>
                     </Button>

@@ -7,8 +7,15 @@ use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserAddress;
+use App\Notifications\OrderCompleted;
+use App\Notifications\OrderPaid;
+use App\Notifications\OrderReadyToPay;
+use App\Notifications\OrderShipped;
+use App\Services\Shipping\RajaOngkirService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class OrderService
 {
@@ -17,7 +24,29 @@ class OrderService
      */
     public const RESERVE_TTL_HOURS = 24;
 
-    public function __construct(private readonly CartService $cart) {}
+    /**
+     * How long a shipped order waits for the buyer to confirm receipt before it
+     * is auto-completed by the scheduler.
+     */
+    public const AUTO_COMPLETE_DAYS = 7;
+
+    public function __construct(
+        private readonly CartService $cart,
+        private readonly RajaOngkirService $rajaOngkir,
+    ) {}
+
+    /**
+     * Total parcel weight (grams) for a set of books, falling back to the
+     * configured default for any book without a weight.
+     *
+     * @param  Collection<int, Book>  $books
+     */
+    public function parcelWeightGrams(Collection $books): int
+    {
+        $default = (int) config('shipping.default_weight_grams');
+
+        return (int) $books->sum(fn (Book $book): int => (int) ($book->weight_grams ?? $default));
+    }
 
     /**
      * Reserve each cart book atomically, then create a pending order with
@@ -30,7 +59,7 @@ class OrderService
      * For `ship`, the chosen saved address is snapshotted onto the order so
      * history survives the user later editing or deleting it.
      *
-     * @param  array{customer_name: string, customer_phone: string, fulfillment: string, user_address_id?: int|null}  $details
+     * @param  array{customer_name: string, customer_phone: string, fulfillment: string, user_address_id?: int|null, shipping_courier?: string|null, shipping_service?: string|null}  $details
      *
      * @throws CartConflictException when a book was taken by someone else first.
      */
@@ -62,13 +91,15 @@ class OrderService
 
             $subtotal = (int) $books->sum('price');
 
+            $quote = $this->resolveQuote($books, $address, $details);
+
             $order = Order::create([
                 'user_id' => $user->id,
                 'status' => 'pending',
                 'channel' => 'online',
                 'subtotal' => $subtotal,
-                'shipping_cost' => 0,
-                'total' => $subtotal,
+                'shipping_cost' => $quote['shipping_cost'],
+                'total' => $subtotal + $quote['shipping_cost'],
                 'customer_name' => $details['customer_name'],
                 'customer_phone' => $details['customer_phone'],
                 'fulfillment' => $details['fulfillment'],
@@ -78,6 +109,10 @@ class OrderService
                 'shipping_postal_code' => $address?->postal_code,
                 'shipping_destination_id' => $address?->destination_id,
                 'shipping_destination_label' => $address?->destination_label,
+                'shipping_courier' => $quote['shipping_courier'],
+                'shipping_service' => $quote['shipping_service'],
+                'shipping_etd' => $quote['shipping_etd'],
+                'shipping_weight_grams' => $quote['shipping_weight_grams'],
                 'payment_method' => 'transfer',
                 'expires_at' => now()->addHours(self::RESERVE_TTL_HOURS),
             ]);
@@ -97,6 +132,59 @@ class OrderService
     }
 
     /**
+     * Re-quote server-side and pick the customer's chosen courier + service so
+     * the shipping cost is never trusted from the client. Falls back to a
+     * 0 / cost-pending order when shipping isn't applicable or the quote is
+     * unavailable (API down or daily budget exhausted) — the owner then sets
+     * it manually.
+     *
+     * @param  Collection<int, Book>  $books
+     * @param  array{fulfillment: string, shipping_courier?: string|null, shipping_service?: string|null}  $details
+     * @return array{shipping_cost: int, shipping_courier: string|null, shipping_service: string|null, shipping_etd: string|null, shipping_weight_grams: int|null}
+     */
+    private function resolveQuote(Collection $books, ?UserAddress $address, array $details): array
+    {
+        $blank = [
+            'shipping_cost' => 0,
+            'shipping_courier' => null,
+            'shipping_service' => null,
+            'shipping_etd' => null,
+            'shipping_weight_grams' => null,
+        ];
+
+        if ($details['fulfillment'] !== 'ship' || $address === null || empty($address->destination_id)) {
+            return $blank;
+        }
+
+        $weight = $this->parcelWeightGrams($books);
+        $courier = $details['shipping_courier'] ?? null;
+        $service = $details['shipping_service'] ?? null;
+
+        if (empty($courier) || empty($service)) {
+            return [...$blank, 'shipping_weight_grams' => $weight];
+        }
+
+        $options = $this->rajaOngkir->calculateCost((int) $address->destination_id, $weight);
+
+        /** @var array{courier: string, courier_name: string, service: string, description: string, cost: int, etd: string}|null $chosen */
+        $chosen = collect($options ?? [])->first(
+            fn (array $option): bool => $option['courier'] === $courier && $option['service'] === $service,
+        );
+
+        if ($chosen === null) {
+            return [...$blank, 'shipping_weight_grams' => $weight];
+        }
+
+        return [
+            'shipping_cost' => $chosen['cost'],
+            'shipping_courier' => $chosen['courier'],
+            'shipping_service' => $chosen['service'],
+            'shipping_etd' => $chosen['etd'],
+            'shipping_weight_grams' => $weight,
+        ];
+    }
+
+    /**
      * Confirm payment: order paid, its reserved books become sold.
      */
     public function markPaid(Order $order): void
@@ -112,6 +200,44 @@ class OrderService
                 'expires_at' => null,
             ]);
         });
+
+        $this->notifyAdmins(new OrderPaid($order));
+    }
+
+    /**
+     * Seller marks a paid order as shipped, recording the courier tracking
+     * number (resi). Notifies the buyer so they can track and later confirm
+     * receipt.
+     */
+    public function markShipped(Order $order, ?string $trackingNumber): void
+    {
+        $order->update([
+            'status' => 'shipped',
+            'shipping_tracking_number' => $trackingNumber,
+            'shipped_at' => now(),
+        ]);
+
+        $order->user?->notify(new OrderShipped($order));
+    }
+
+    /**
+     * Confirm payment coming from the payment gateway webhook. Idempotent: a
+     * notification may fire several times, so this is a no-op once the order has
+     * left the `pending` state. Records the actual instrument used.
+     */
+    public function markPaidFromGateway(Order $order, string $channel, string $reference): void
+    {
+        if ($order->status !== 'pending') {
+            return;
+        }
+
+        $order->update([
+            'payment_gateway' => 'midtrans',
+            'payment_channel' => $channel,
+            'payment_reference' => $reference,
+        ]);
+
+        $this->markPaid($order);
     }
 
     /**
@@ -121,6 +247,8 @@ class OrderService
     public function complete(Order $order): void
     {
         $order->update(['status' => 'completed']);
+
+        $this->notifyAdmins(new OrderCompleted($order));
     }
 
     /**
@@ -133,6 +261,10 @@ class OrderService
             'shipping_cost' => $shippingCost,
             'total' => $order->subtotal + $shippingCost,
         ]);
+
+        if ($order->fulfillment === 'ship' && $order->status === 'pending') {
+            $order->user?->notify(new OrderReadyToPay($order));
+        }
     }
 
     /**
@@ -170,5 +302,31 @@ class OrderService
         }
 
         return $expired->count();
+    }
+
+    /**
+     * Auto-complete shipped orders the buyer never confirmed, after the grace
+     * window. Returns the count completed.
+     */
+    public function autoCompleteShipped(): int
+    {
+        $stale = Order::where('status', 'shipped')
+            ->whereNotNull('shipped_at')
+            ->where('shipped_at', '<', now()->subDays(self::AUTO_COMPLETE_DAYS))
+            ->get();
+
+        foreach ($stale as $order) {
+            $this->complete($order);
+        }
+
+        return $stale->count();
+    }
+
+    /**
+     * Notify every admin (seller) with the given notification.
+     */
+    private function notifyAdmins(Notification $notification): void
+    {
+        NotificationFacade::send(User::where('is_admin', true)->get(), $notification);
     }
 }

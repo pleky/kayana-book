@@ -29,7 +29,17 @@ class Order extends Model
         'shipping_postal_code',
         'shipping_destination_id',
         'shipping_destination_label',
+        'shipping_courier',
+        'shipping_service',
+        'shipping_etd',
+        'shipping_weight_grams',
+        'shipping_tracking_number',
+        'shipped_at',
         'payment_method',
+        'payment_gateway',
+        'payment_reference',
+        'payment_channel',
+        'snap_token',
         'expires_at',
         'cancel_reason',
         'paid_at',
@@ -45,8 +55,10 @@ class Order extends Model
             'shipping_cost' => 'integer',
             'total' => 'integer',
             'shipping_destination_id' => 'integer',
+            'shipping_weight_grams' => 'integer',
             'expires_at' => 'datetime',
             'paid_at' => 'datetime',
+            'shipped_at' => 'datetime',
         ];
     }
 

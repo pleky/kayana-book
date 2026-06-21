@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Release stuck reservations so unique stock never locks forever (ADR-004).
 Schedule::command('orders:release-expired')->everyFiveMinutes();
+
+// Complete shipped orders the buyer never confirmed after the grace window.
+Schedule::command('orders:auto-complete-shipped')->daily();

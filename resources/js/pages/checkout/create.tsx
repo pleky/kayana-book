@@ -1,12 +1,21 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import CheckoutController from '@/actions/App/Http/Controllers/CheckoutController';
 import SiteHeader from '@/components/catalog/site-header';
 import InputError from '@/components/input-error';
+import { AddressForm } from '@/components/settings/address-form';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit as editAddresses } from '@/routes/addresses';
+import { quote as quoteRoute } from '@/routes/checkout';
 import type { Auth, UserAddress } from '@/types';
 
 const rupiah = new Intl.NumberFormat('id-ID', {
@@ -16,6 +25,20 @@ const rupiah = new Intl.NumberFormat('id-ID', {
 });
 
 type CheckoutItem = { id: number; title: string; price: number };
+
+type QuoteOption = {
+    courier: string;
+    courier_name: string;
+    service: string;
+    description: string;
+    cost: number;
+    etd: string;
+};
+
+type QuoteState = {
+    status: 'idle' | 'loading' | 'ok' | 'unavailable';
+    options: QuoteOption[];
+};
 
 export default function Checkout({
     items,
@@ -28,8 +51,77 @@ export default function Checkout({
 }) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const [fulfillment, setFulfillment] = useState<'pickup' | 'ship'>('pickup');
-    const defaultAddressId =
-        addresses.find((a) => a.is_default)?.id ?? addresses[0]?.id ?? null;
+    const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+        addresses.find((a) => a.is_default)?.id ?? addresses[0]?.id ?? null,
+    );
+    const [addrOpen, setAddrOpen] = useState(false);
+    const [quote, setQuote] = useState<QuoteState>({
+        status: 'idle',
+        options: [],
+    });
+    const [chosen, setChosen] = useState<QuoteOption | null>(null);
+
+    // Sync selection when the address list changes (e.g. after adding the first
+    // address inline) — the freshly added address becomes default and selected.
+    useEffect(() => {
+        if (addresses.some((a) => a.id === selectedAddressId)) {
+            return;
+        }
+
+        setSelectedAddressId(
+            addresses.find((a) => a.is_default)?.id ?? addresses[0]?.id ?? null,
+        );
+    }, [addresses, selectedAddressId]);
+
+    const selectedAddress =
+        addresses.find((a) => a.id === selectedAddressId) ?? null;
+
+    const resetQuote = () => {
+        setQuote({ status: 'idle', options: [] });
+        setChosen(null);
+    };
+
+    const checkOngkir = () => {
+        if (!selectedAddressId) {
+            return;
+        }
+
+        setQuote({ status: 'loading', options: [] });
+        setChosen(null);
+        fetch(quoteRoute({ query: { address_id: selectedAddressId } }).url, {
+            headers: { Accept: 'application/json' },
+        })
+            .then((res) => res.json())
+            .then((json) =>
+                setQuote(
+                    json.available
+                        ? { status: 'ok', options: json.options }
+                        : { status: 'unavailable', options: [] },
+                ),
+            )
+            .catch(() => setQuote({ status: 'unavailable', options: [] }));
+    };
+
+    const shippingCost = chosen?.cost ?? 0;
+
+    const addressDialog = (trigger: ReactNode) => (
+        <Dialog open={addrOpen} onOpenChange={setAddrOpen}>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Tambah alamat</DialogTitle>
+                </DialogHeader>
+                <AddressForm
+                    hiddenFields={{ redirect_to: 'checkout' }}
+                    submitOptions={{
+                        preserveState: true,
+                        preserveScroll: true,
+                    }}
+                    onDone={() => setAddrOpen(false)}
+                />
+            </DialogContent>
+        </Dialog>
+    );
 
     return (
         <div className="min-h-screen bg-background">
@@ -99,9 +191,10 @@ export default function Checkout({
                                                 name="fulfillment"
                                                 value={value}
                                                 checked={fulfillment === value}
-                                                onChange={() =>
-                                                    setFulfillment(value)
-                                                }
+                                                onChange={() => {
+                                                    setFulfillment(value);
+                                                    resetQuote();
+                                                }}
                                                 className="accent-primary"
                                             />
                                             {label}
@@ -117,20 +210,35 @@ export default function Checkout({
                                         <p className="text-muted-foreground">
                                             Belum ada alamat tersimpan.
                                         </p>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="mt-2"
-                                            asChild
-                                        >
-                                            <Link href={editAddresses()}>
+                                        {addressDialog(
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-2"
+                                            >
                                                 Tambah alamat
-                                            </Link>
-                                        </Button>
+                                            </Button>,
+                                        )}
+                                        <InputError
+                                            className="mt-2"
+                                            message={errors.user_address_id}
+                                        />
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        <Label>Alamat pengiriman</Label>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <Label>Alamat pengiriman</Label>
+                                            {addressDialog(
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    + Tambah alamat lain
+                                                </Button>,
+                                            )}
+                                        </div>
                                         <div className="space-y-2">
                                             {addresses.map((address) => (
                                                 <label
@@ -141,10 +249,16 @@ export default function Checkout({
                                                         type="radio"
                                                         name="user_address_id"
                                                         value={address.id}
-                                                        defaultChecked={
-                                                            address.id ===
-                                                            defaultAddressId
+                                                        checked={
+                                                            selectedAddressId ===
+                                                            address.id
                                                         }
+                                                        onChange={() => {
+                                                            setSelectedAddressId(
+                                                                address.id,
+                                                            );
+                                                            resetQuote();
+                                                        }}
                                                         required
                                                         className="mt-1 accent-primary"
                                                     />
@@ -173,19 +287,141 @@ export default function Checkout({
                                         <InputError
                                             message={errors.user_address_id}
                                         />
-                                        <p className="text-xs text-muted-foreground">
-                                            Ongkir dikonfirmasi penjual setelah
-                                            pesanan masuk.
-                                        </p>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link href={editAddresses()}>
-                                                Kelola alamat
-                                            </Link>
-                                        </Button>
+
+                                        {/* Ongkir */}
+                                        {selectedAddress &&
+                                            !selectedAddress.destination_id && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Alamat ini belum punya
+                                                    lokasi ongkir.{' '}
+                                                    <Link
+                                                        href={editAddresses()}
+                                                        className="text-primary underline"
+                                                    >
+                                                        Lengkapi
+                                                    </Link>{' '}
+                                                    untuk cek ongkir, atau
+                                                    lanjut (ongkir dikonfirmasi
+                                                    penjual).
+                                                </p>
+                                            )}
+
+                                        {selectedAddress?.destination_id && (
+                                            <div className="space-y-2">
+                                                {quote.status !== 'ok' && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={checkOngkir}
+                                                        disabled={
+                                                            quote.status ===
+                                                            'loading'
+                                                        }
+                                                    >
+                                                        {quote.status ===
+                                                        'loading'
+                                                            ? 'Mengecek…'
+                                                            : 'Cek ongkir'}
+                                                    </Button>
+                                                )}
+
+                                                {quote.status ===
+                                                    'unavailable' && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Ongkir tidak bisa dicek
+                                                        sekarang — pesanan tetap
+                                                        bisa dibuat, ongkir
+                                                        dikonfirmasi penjual.
+                                                    </p>
+                                                )}
+
+                                                {quote.status === 'ok' && (
+                                                    <div className="space-y-2">
+                                                        {quote.options.map(
+                                                            (option) => {
+                                                                const id = `${option.courier}-${option.service}`;
+                                                                const active =
+                                                                    chosen?.courier ===
+                                                                        option.courier &&
+                                                                    chosen?.service ===
+                                                                        option.service;
+
+                                                                return (
+                                                                    <label
+                                                                        key={id}
+                                                                        className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                                                                            active
+                                                                                ? 'border-primary bg-primary/5'
+                                                                                : 'border-border hover:bg-accent/40'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-2">
+                                                                            <input
+                                                                                type="radio"
+                                                                                name="quote_option"
+                                                                                checked={
+                                                                                    active
+                                                                                }
+                                                                                onChange={() =>
+                                                                                    setChosen(
+                                                                                        option,
+                                                                                    )
+                                                                                }
+                                                                                className="accent-primary"
+                                                                            />
+                                                                            <span>
+                                                                                <span className="font-medium text-foreground uppercase">
+                                                                                    {
+                                                                                        option.courier
+                                                                                    }{' '}
+                                                                                    {
+                                                                                        option.service
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="block text-xs text-muted-foreground">
+                                                                                    {
+                                                                                        option.description
+                                                                                    }
+                                                                                    {option.etd
+                                                                                        ? ` · ${option.etd}`
+                                                                                        : ''}
+                                                                                </span>
+                                                                            </span>
+                                                                        </span>
+                                                                        <span className="font-semibold text-primary">
+                                                                            {rupiah.format(
+                                                                                option.cost,
+                                                                            )}
+                                                                        </span>
+                                                                    </label>
+                                                                );
+                                                            },
+                                                        )}
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Estimasi — ongkir
+                                                            final dikonfirmasi
+                                                            penjual.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {chosen && (
+                                            <>
+                                                <input
+                                                    type="hidden"
+                                                    name="shipping_courier"
+                                                    value={chosen.courier}
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name="shipping_service"
+                                                    value={chosen.service}
+                                                />
+                                            </>
+                                        )}
                                     </div>
                                 ))}
 
@@ -217,9 +453,27 @@ export default function Checkout({
                             </li>
                         ))}
                     </ul>
-                    <div className="flex justify-between border-t pt-2 font-semibold">
-                        <span>Subtotal</span>
-                        <span>{rupiah.format(subtotal)}</span>
+                    <div className="space-y-1 border-t pt-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                                Subtotal
+                            </span>
+                            <span>{rupiah.format(subtotal)}</span>
+                        </div>
+                        {chosen && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                    Ongkir (estimasi)
+                                </span>
+                                <span>{rupiah.format(shippingCost)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between border-t pt-1 font-semibold">
+                            <span>Total</span>
+                            <span>
+                                {rupiah.format(subtotal + shippingCost)}
+                            </span>
+                        </div>
                     </div>
                 </aside>
             </main>

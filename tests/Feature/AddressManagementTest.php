@@ -41,6 +41,22 @@ it('makes the first address default automatically', function () {
         ->and($address->label)->toBe('Rumah');
 });
 
+it('redirects back to checkout when storing from the checkout flow', function () {
+    actingAs($user = User::factory()->create());
+
+    post(route('addresses.store'), addressPayload(['redirect_to' => 'checkout']))
+        ->assertRedirect(route('checkout.create'));
+
+    expect($user->addresses()->count())->toBe(1);
+});
+
+it('redirects to the address page when storing normally', function () {
+    actingAs(User::factory()->create());
+
+    post(route('addresses.store'), addressPayload())
+        ->assertRedirect(route('addresses.edit'));
+});
+
 it('keeps a single default when a new default is added', function () {
     actingAs($user = User::factory()->create());
     $first = UserAddress::factory()->for($user)->default()->create();

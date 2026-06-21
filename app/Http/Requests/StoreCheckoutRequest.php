@@ -32,6 +32,9 @@ class StoreCheckoutRequest extends FormRequest
                 'required_if:fulfillment,ship',
                 Rule::exists('user_addresses', 'id')->where('user_id', $this->user()?->id),
             ],
+            // The picked quote. Cost is re-quoted server-side, never trusted.
+            'shipping_courier' => ['nullable', 'string', 'max:30'],
+            'shipping_service' => ['nullable', 'string', 'max:60', 'required_with:shipping_courier'],
         ];
     }
 }
