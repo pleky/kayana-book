@@ -44,7 +44,7 @@ class BookController extends Controller
     public function create(): Response
     {
         return Inertia::render('admin/books/create', [
-            'categories' => Category::orderBy('sort_order')->get(['id', 'name']),
+            'categories' => Category::orderBy('sort_order')->get(['id', 'name', 'parent_id']),
         ]);
     }
 
@@ -72,7 +72,7 @@ class BookController extends Controller
     {
         return Inertia::render('admin/books/edit', [
             'book' => $book->load(['images', 'tags']),
-            'categories' => Category::orderBy('sort_order')->get(['id', 'name']),
+            'categories' => Category::orderBy('sort_order')->get(['id', 'name', 'parent_id']),
         ]);
     }
 

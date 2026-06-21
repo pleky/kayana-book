@@ -1,4 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import DOMPurify from 'dompurify';
 import { ArrowLeft, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import CartController from '@/actions/App/Http/Controllers/CartController';
@@ -108,9 +109,12 @@ export default function BookDetail({ book }: { book: Book }) {
                         </p>
 
                         {book.description && (
-                            <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                                {book.description}
-                            </p>
+                            <div
+                                className="text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:font-medium [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                                dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(book.description),
+                                }}
+                            />
                         )}
 
                         {(book.tags?.length ?? 0) > 0 && (
