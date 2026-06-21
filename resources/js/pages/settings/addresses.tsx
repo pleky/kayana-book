@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AddressController from '@/actions/App/Http/Controllers/Settings/AddressController';
 import { AddressForm } from '@/components/settings/address-form';
+import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import type { UserAddress } from '@/types';
 
 export default function Addresses({ addresses }: { addresses: UserAddress[] }) {
     useFlashToasts();
+    const confirm = useConfirm();
     const [editingId, setEditingId] = useState<number | null>(null);
 
     return (
@@ -93,11 +95,15 @@ export default function Addresses({ addresses }: { addresses: UserAddress[] }) {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-destructive"
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (
-                                                        confirm(
-                                                            `Hapus alamat "${address.label}"?`,
-                                                        )
+                                                        await confirm({
+                                                            title: 'Hapus alamat',
+                                                            description: `Hapus alamat "${address.label}"?`,
+                                                            destructive: true,
+                                                            confirmLabel:
+                                                                'Hapus',
+                                                        })
                                                     ) {
                                                         router.delete(
                                                             AddressController.destroy(

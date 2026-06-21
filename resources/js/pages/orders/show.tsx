@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import SiteHeader from '@/components/catalog/site-header';
+import { useConfirm } from '@/components/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus } from '@/types';
@@ -72,6 +73,7 @@ export default function OrderShow({
     bank: Bank;
     payment: Payment;
 }) {
+    const confirm = useConfirm();
     const [loading, setLoading] = useState(false);
     const [awaiting, setAwaiting] = useState(false);
     const useGateway = payment.gateway_enabled;
@@ -284,8 +286,15 @@ export default function OrderShow({
                             menyelesaikan pesanan.
                         </p>
                         <Button
-                            onClick={() => {
-                                if (confirm('Konfirmasi pesanan sudah diterima?')) {
+                            onClick={async () => {
+                                if (
+                                    await confirm({
+                                        title: 'Konfirmasi penerimaan',
+                                        description:
+                                            'Pastikan barang sudah kamu terima. Pesanan akan ditandai selesai.',
+                                        confirmLabel: 'Ya, sudah diterima',
+                                    })
+                                ) {
                                     router.post(
                                         OrderController.confirmReceived(
                                             order.id,

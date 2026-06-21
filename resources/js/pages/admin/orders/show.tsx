@@ -1,5 +1,6 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
 import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -52,8 +53,10 @@ const rupiah = new Intl.NumberFormat('id-ID', {
 });
 
 export default function AdminOrderShow({ order }: { order: Order }) {
-    const confirmPost = (url: string, message: string, data = {}) => {
-        if (confirm(message)) {
+    const confirm = useConfirm();
+
+    const confirmPost = async (url: string, message: string, data = {}) => {
+        if (await confirm({ description: message })) {
             router.post(url, data, { preserveScroll: true });
         }
     };

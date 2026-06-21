@@ -2,6 +2,7 @@ import { Form, Head, Link, router } from '@inertiajs/react';
 import BookController from '@/actions/App/Http/Controllers/Admin/BookController';
 import BookImageController from '@/actions/App/Http/Controllers/Admin/BookImageController';
 import BookFormFields from '@/components/admin/book-form-fields';
+import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,8 @@ export default function EditBook({
     book: Book;
     categories: BookCategory[];
 }) {
+    const confirm = useConfirm();
+
     return (
         <>
             <Head title={`Edit: ${book.title}`} />
@@ -77,8 +80,16 @@ export default function EditBook({
                                         variant="ghost"
                                         size="sm"
                                         className="h-7 px-1 text-xs text-destructive"
-                                        onClick={() => {
-                                            if (confirm('Hapus foto ini?')) {
+                                        onClick={async () => {
+                                            if (
+                                                await confirm({
+                                                    title: 'Hapus foto',
+                                                    description:
+                                                        'Hapus foto ini?',
+                                                    destructive: true,
+                                                    confirmLabel: 'Hapus',
+                                                })
+                                            ) {
                                                 router.delete(
                                                     BookImageController.destroy(
                                                         {

@@ -1,5 +1,6 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AdminCategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,25 @@ export default function Categories({
 }: {
     categories: BookCategory[];
 }) {
+    const confirm = useConfirm();
     const roots = categories.filter((c) => !c.parent_id);
     const childrenOf = (id: number) =>
         categories.filter((c) => c.parent_id === id);
+
+    const destroyCategory = async (category: BookCategory) => {
+        if (
+            await confirm({
+                title: 'Hapus kategori',
+                description: `Hapus kategori "${category.name}"?`,
+                destructive: true,
+                confirmLabel: 'Hapus',
+            })
+        ) {
+            router.delete(AdminCategoryController.destroy(category.slug!).url, {
+                preserveScroll: true,
+            });
+        }
+    };
 
     const row = (category: BookCategory, child = false) => (
         <li
@@ -36,21 +53,14 @@ export default function Categories({
                         Edit
                     </Link>
                 </Button>
-                <Form
-                    {...AdminCategoryController.destroy.form(category.slug!)}
-                    options={{ preserveScroll: true }}
-                    onBefore={() =>
-                        confirm(`Hapus kategori "${category.name}"?`)
-                    }
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => destroyCategory(category)}
                 >
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                    >
-                        Hapus
-                    </Button>
-                </Form>
+                    Hapus
+                </Button>
             </div>
         </li>
     );

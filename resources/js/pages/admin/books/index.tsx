@@ -1,5 +1,6 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
 import BookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,8 @@ export default function BooksIndex({
     books: Paginated<Book>;
     filters: { search?: string; status?: string };
 }) {
+    const confirm = useConfirm();
+
     return (
         <>
             <Head title="Kelola Buku" />
@@ -154,11 +157,15 @@ export default function BooksIndex({
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-destructive"
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (
-                                                        confirm(
-                                                            `Hapus "${book.title}"?`,
-                                                        )
+                                                        await confirm({
+                                                            title: 'Hapus buku',
+                                                            description: `Hapus "${book.title}"?`,
+                                                            destructive: true,
+                                                            confirmLabel:
+                                                                'Hapus',
+                                                        })
                                                     ) {
                                                         router.delete(
                                                             BookController.destroy(
