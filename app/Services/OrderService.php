@@ -6,6 +6,7 @@ use App\Exceptions\CartConflictException;
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\UserAddress;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +27,10 @@ class OrderService
      * Shipping cost starts at 0; the owner fills it in manually after checkout
      * (product decision #3), which recomputes the total.
      *
-     * @param  array{customer_name: string, customer_phone: string, fulfillment: string, shipping_address?: string|null}  $details
+     * For `ship`, the chosen saved address is snapshotted onto the order so
+     * history survives the user later editing or deleting it.
+     *
+     * @param  array{customer_name: string, customer_phone: string, fulfillment: string, user_address_id?: int|null}  $details
      *
      * @throws CartConflictException when a book was taken by someone else first.
      */
@@ -36,7 +40,11 @@ class OrderService
 
         abort_if($ids === [], 422, 'Keranjang kosong.');
 
-        return DB::transaction(function () use ($user, $details, $ids): Order {
+        $address = ($details['fulfillment'] === 'ship' && ! empty($details['user_address_id']))
+            ? UserAddress::where('user_id', $user->id)->find($details['user_address_id'])
+            : null;
+
+        return DB::transaction(function () use ($user, $details, $ids, $address): Order {
             foreach ($ids as $id) {
                 $reserved = Book::where('id', $id)
                     ->where('status', 'available')
@@ -64,7 +72,12 @@ class OrderService
                 'customer_name' => $details['customer_name'],
                 'customer_phone' => $details['customer_phone'],
                 'fulfillment' => $details['fulfillment'],
-                'shipping_address' => $details['shipping_address'] ?? null,
+                'recipient_name' => $address?->recipient_name,
+                'recipient_phone' => $address?->recipient_phone,
+                'shipping_address' => $address?->address_line,
+                'shipping_postal_code' => $address?->postal_code,
+                'shipping_destination_id' => $address?->destination_id,
+                'shipping_destination_label' => $address?->destination_label,
                 'payment_method' => 'transfer',
                 'expires_at' => now()->addHours(self::RESERVE_TTL_HOURS),
             ]);

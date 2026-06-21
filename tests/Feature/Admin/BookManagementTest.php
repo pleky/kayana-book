@@ -132,3 +132,20 @@ it('soft deletes a book', function () {
     expect(Book::count())->toBe(0)
         ->and(Book::withTrashed()->count())->toBe(1);
 });
+
+it('stores the parcel weight in grams', function () {
+    Storage::fake('public');
+    actingAs(admin());
+
+    post(route('admin.books.store'), [
+        'title' => 'Buku Berat',
+        'price' => 10000,
+        'condition' => 'good',
+        'language' => 'id',
+        'audience' => 'umum',
+        'weight_grams' => 450,
+        'photos' => [UploadedFile::fake()->image('cover.jpg')],
+    ])->assertRedirect();
+
+    expect(Book::firstOrFail()->weight_grams)->toBe(450);
+});

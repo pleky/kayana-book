@@ -30,6 +30,7 @@ class Book extends Model
         'category_id',
         'language',
         'audience',
+        'weight_grams',
         'sold_at',
     ];
 
@@ -42,6 +43,7 @@ class Book extends Model
             'is_new' => 'boolean',
             'price' => 'integer',
             'cost_price' => 'integer',
+            'weight_grams' => 'integer',
             'sold_at' => 'datetime',
         ];
     }

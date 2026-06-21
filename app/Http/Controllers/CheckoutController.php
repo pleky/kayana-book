@@ -8,6 +8,7 @@ use App\Models\Book;
 use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +16,7 @@ class CheckoutController extends Controller
 {
     public function __construct(private readonly CartService $cart) {}
 
-    public function create(): Response|RedirectResponse
+    public function create(Request $request): Response|RedirectResponse
     {
         $books = $this->cart->availableBooks();
 
@@ -30,6 +31,10 @@ class CheckoutController extends Controller
                 'price' => $book->price,
             ])->values(),
             'subtotal' => (int) $books->sum('price'),
+            'addresses' => $request->user()->addresses()
+                ->orderByDesc('is_default')
+                ->latest()
+                ->get(['id', 'label', 'recipient_name', 'recipient_phone', 'address_line', 'postal_code', 'is_default']),
         ]);
     }
 

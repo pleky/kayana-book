@@ -1,4 +1,4 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import CheckoutController from '@/actions/App/Http/Controllers/CheckoutController';
 import SiteHeader from '@/components/catalog/site-header';
@@ -6,7 +6,8 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Auth } from '@/types';
+import { edit as editAddresses } from '@/routes/addresses';
+import type { Auth, UserAddress } from '@/types';
 
 const rupiah = new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -19,12 +20,16 @@ type CheckoutItem = { id: number; title: string; price: number };
 export default function Checkout({
     items,
     subtotal,
+    addresses,
 }: {
     items: CheckoutItem[];
     subtotal: number;
+    addresses: UserAddress[];
 }) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const [fulfillment, setFulfillment] = useState<'pickup' | 'ship'>('pickup');
+    const defaultAddressId =
+        addresses.find((a) => a.is_default)?.id ?? addresses[0]?.id ?? null;
 
     return (
         <div className="min-h-screen bg-background">
@@ -106,27 +111,83 @@ export default function Checkout({
                                 <InputError message={errors.fulfillment} />
                             </div>
 
-                            {fulfillment === 'ship' && (
-                                <div>
-                                    <Label htmlFor="shipping_address">
-                                        Alamat pengiriman
-                                    </Label>
-                                    <textarea
-                                        id="shipping_address"
-                                        name="shipping_address"
-                                        rows={3}
-                                        className="mt-1 flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                                    />
-                                    <InputError
-                                        className="mt-1"
-                                        message={errors.shipping_address}
-                                    />
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        Ongkir dihitung & dikonfirmasi penjual
-                                        setelah pesanan masuk.
-                                    </p>
-                                </div>
-                            )}
+                            {fulfillment === 'ship' &&
+                                (addresses.length === 0 ? (
+                                    <div className="rounded-lg border border-dashed border-border p-4 text-sm">
+                                        <p className="text-muted-foreground">
+                                            Belum ada alamat tersimpan.
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-2"
+                                            asChild
+                                        >
+                                            <Link href={editAddresses()}>
+                                                Tambah alamat
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Label>Alamat pengiriman</Label>
+                                        <div className="space-y-2">
+                                            {addresses.map((address) => (
+                                                <label
+                                                    key={address.id}
+                                                    className="flex cursor-pointer gap-3 rounded-lg border border-border p-3 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="user_address_id"
+                                                        value={address.id}
+                                                        defaultChecked={
+                                                            address.id ===
+                                                            defaultAddressId
+                                                        }
+                                                        required
+                                                        className="mt-1 accent-primary"
+                                                    />
+                                                    <span className="min-w-0">
+                                                        <span className="font-medium text-foreground">
+                                                            {address.label}
+                                                        </span>{' '}
+                                                        —{' '}
+                                                        {address.recipient_name}{' '}
+                                                        ·{' '}
+                                                        {
+                                                            address.recipient_phone
+                                                        }
+                                                        <span className="block text-muted-foreground">
+                                                            {
+                                                                address.address_line
+                                                            }
+                                                            {address.postal_code
+                                                                ? `, ${address.postal_code}`
+                                                                : ''}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <InputError
+                                            message={errors.user_address_id}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Ongkir dikonfirmasi penjual setelah
+                                            pesanan masuk.
+                                        </p>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link href={editAddresses()}>
+                                                Kelola alamat
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                ))}
 
                             <Button
                                 type="submit"

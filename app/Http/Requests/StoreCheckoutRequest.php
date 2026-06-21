@@ -27,7 +27,11 @@ class StoreCheckoutRequest extends FormRequest
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'fulfillment' => ['required', Rule::in(['pickup', 'ship'])],
-            'shipping_address' => ['nullable', 'required_if:fulfillment,ship', 'string'],
+            'user_address_id' => [
+                'nullable',
+                'required_if:fulfillment,ship',
+                Rule::exists('user_addresses', 'id')->where('user_id', $this->user()?->id),
+            ],
         ];
     }
 }

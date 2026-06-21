@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\UserAddress;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -86,7 +87,7 @@ it('rolls back the whole checkout when one book was already taken', function () 
         ->and($taken->refresh()->status)->toBe('reserved');
 });
 
-it('requires a shipping address when shipping', function () {
+it('requires a saved address when shipping', function () {
     $user = User::factory()->create();
     $book = Book::factory()->create(['status' => 'available']);
 
@@ -97,7 +98,52 @@ it('requires a shipping address when shipping', function () {
             'customer_phone' => '08123456789',
             'fulfillment' => 'ship',
         ])
-        ->assertSessionHasErrors('shipping_address');
+        ->assertSessionHasErrors('user_address_id');
 
     expect($book->refresh()->status)->toBe('available');
+});
+
+it('snapshots the chosen address onto a shipping order', function () {
+    $user = User::factory()->create();
+    $address = UserAddress::factory()->for($user)->create([
+        'recipient_name' => 'Sari',
+        'recipient_phone' => '0811222333',
+        'address_line' => 'Jl. Melati 5',
+        'postal_code' => '80113',
+    ]);
+    $book = Book::factory()->create(['status' => 'available']);
+
+    actingAs($user)
+        ->withSession(['cart' => [$book->id]])
+        ->post(route('checkout.store'), [
+            'customer_name' => 'Budi',
+            'customer_phone' => '08123456789',
+            'fulfillment' => 'ship',
+            'user_address_id' => $address->id,
+        ])
+        ->assertRedirect();
+
+    $order = Order::firstOrFail();
+
+    expect($order->fulfillment)->toBe('ship')
+        ->and($order->recipient_name)->toBe('Sari')
+        ->and($order->recipient_phone)->toBe('0811222333')
+        ->and($order->shipping_address)->toBe('Jl. Melati 5')
+        ->and($order->shipping_postal_code)->toBe('80113');
+});
+
+it('rejects an address belonging to another user', function () {
+    $user = User::factory()->create();
+    $otherAddress = UserAddress::factory()->create();
+    $book = Book::factory()->create(['status' => 'available']);
+
+    actingAs($user)
+        ->withSession(['cart' => [$book->id]])
+        ->post(route('checkout.store'), [
+            'customer_name' => 'Budi',
+            'customer_phone' => '08123456789',
+            'fulfillment' => 'ship',
+            'user_address_id' => $otherAddress->id,
+        ])
+        ->assertSessionHasErrors('user_address_id');
 });

@@ -34,6 +34,7 @@ class BookFactory extends Factory
             'category_id' => null,
             'language' => fake()->randomElement(['id', 'en', 'lainnya']),
             'audience' => fake()->randomElement(['anak', 'remaja', 'dewasa', 'umum']),
+            'weight_grams' => fake()->optional()->numberBetween(150, 1200),
             'sold_at' => null,
         ];
     }

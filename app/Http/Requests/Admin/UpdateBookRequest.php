@@ -21,7 +21,7 @@ class UpdateBookRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        foreach (['author', 'isbn', 'description', 'cost_price', 'category_id'] as $field) {
+        foreach (['author', 'isbn', 'description', 'cost_price', 'category_id', 'weight_grams'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }
@@ -49,6 +49,7 @@ class UpdateBookRequest extends FormRequest
             'audience' => ['required', Rule::in(['anak', 'remaja', 'dewasa', 'umum'])],
             'status' => ['required', Rule::in(['available', 'reserved', 'sold'])],
             'tags' => ['nullable', 'string', 'max:500'],
+            'weight_grams' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'photos' => ['nullable', 'array', 'max:8'],
             'photos.*' => ['image', 'max:5120'],
         ];

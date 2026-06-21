@@ -179,6 +179,22 @@ export default function BookFormFields({
                 </div>
 
                 <div>
+                    <Label htmlFor="weight_grams">Berat (gram)</Label>
+                    <Input
+                        id="weight_grams"
+                        name="weight_grams"
+                        type="number"
+                        min={1}
+                        defaultValue={book?.weight_grams ?? ''}
+                        placeholder="cth. 300 — untuk ongkir"
+                    />
+                    <InputError
+                        className="mt-1"
+                        message={errors.weight_grams}
+                    />
+                </div>
+
+                <div>
                     <Label htmlFor="language">Bahasa</Label>
                     <select
                         id="language"

@@ -21,7 +21,7 @@ class StoreBookRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        foreach (['author', 'isbn', 'description', 'cost_price', 'category_id'] as $field) {
+        foreach (['author', 'isbn', 'description', 'cost_price', 'category_id', 'weight_grams'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }
@@ -48,6 +48,7 @@ class StoreBookRequest extends FormRequest
             'language' => ['required', Rule::in(['id', 'en', 'lainnya'])],
             'audience' => ['required', Rule::in(['anak', 'remaja', 'dewasa', 'umum'])],
             'tags' => ['nullable', 'string', 'max:500'],
+            'weight_grams' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'photos' => ['required', 'array', 'min:1', 'max:8'],
             'photos.*' => ['image', 'max:5120'],
         ];

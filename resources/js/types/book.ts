@@ -16,6 +16,18 @@ export type Tag = {
     slug: string;
 };
 
+export type UserAddress = {
+    id: number;
+    label: string;
+    recipient_name: string;
+    recipient_phone: string;
+    address_line: string;
+    postal_code: string | null;
+    destination_id?: number | null;
+    destination_label?: string | null;
+    is_default: boolean;
+};
+
 export type Book = {
     id: number;
     title: string;
@@ -31,6 +43,7 @@ export type Book = {
     category_id: number | null;
     language: BookLanguage;
     audience: BookAudience;
+    weight_grams: number | null;
     sold_at: string | null;
     created_at: string;
     images?: BookImage[];
