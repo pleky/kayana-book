@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Category;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -43,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'cartCount' => fn (): int => app(CartService::class)->count(),
+            'navCategories' => fn () => Category::orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'parent_id']),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

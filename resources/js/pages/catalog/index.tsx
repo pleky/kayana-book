@@ -1,19 +1,28 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { SlidersHorizontal } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Check, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
+import { useState } from 'react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
+import CatalogFilters, {
+    type CatalogFiltersValue,
+} from '@/components/catalog/catalog-filters';
 import SiteHeader from '@/components/catalog/site-header';
 import { Reveal } from '@/components/motion/reveal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type {
-    Book,
-    BookCategory,
-    BookCondition,
-    Paginated,
-    Tag,
-} from '@/types';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
+import type { Book, BookCategory, BookCondition, Paginated } from '@/types';
 
 const CONDITION_LABEL: Record<BookCondition, string> = {
     new: 'Baru',
@@ -23,241 +32,264 @@ const CONDITION_LABEL: Record<BookCondition, string> = {
     poor: 'Kurang',
 };
 
+const LANG_LABEL: Record<string, string> = {
+    id: 'Indonesia',
+    en: 'Inggris',
+    lainnya: 'Lainnya',
+};
+
+const AUDIENCE_LABEL: Record<string, string> = {
+    umum: 'Umum',
+    anak: 'Anak',
+    remaja: 'Remaja',
+    dewasa: 'Dewasa',
+};
+
+const SORTS: { value: string; label: string }[] = [
+    { value: '', label: 'Terbaru' },
+    { value: 'price_asc', label: 'Termurah' },
+    { value: 'price_desc', label: 'Termahal' },
+];
+
 const rupiah = new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
 });
 
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none';
-
-type Filters = {
-    search?: string;
-    category?: string;
-    tag?: string;
-    language?: string;
-    audience?: string;
-    condition?: string;
-    min_price?: string;
-    max_price?: string;
-    sort?: string;
-};
+function clean(params: CatalogFiltersValue): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(params).filter(
+            ([, v]) => v !== undefined && v !== null && v !== '',
+        ),
+    ) as Record<string, string>;
+}
 
 export default function Catalog({
     books,
     categories,
-    tags,
     filters,
 }: {
     books: Paginated<Book>;
     categories: BookCategory[];
-    tags: Tag[];
-    filters: Filters;
+    filters: CatalogFiltersValue;
 }) {
-    const roots = categories.filter((c) => !c.parent_id);
-    const childrenOf = (id: number) =>
-        categories.filter((c) => c.parent_id === id);
+    const [sheetOpen, setSheetOpen] = useState(false);
+
+    const apply = (next: CatalogFiltersValue) => {
+        router.get(
+            CatalogController.index().url,
+            clean({ ...filters, ...next }),
+            { preserveScroll: true, preserveState: true, replace: true },
+        );
+    };
+
+    const nameBySlug = (list: { slug?: string; name: string }[], slug?: string) =>
+        list.find((c) => c.slug === slug)?.name ?? slug;
+
+    // Active filter chips (sort & search excluded — they live in the toolbar).
+    const chips: { key: keyof CatalogFiltersValue; label: string }[] = [];
+    if (filters.search) {
+        chips.push({ key: 'search', label: `Cari: "${filters.search}"` });
+    }
+    if (filters.category) {
+        chips.push({
+            key: 'category',
+            label: `Kategori: ${nameBySlug(categories, filters.category)}`,
+        });
+    }
+    if (filters.condition) {
+        chips.push({
+            key: 'condition',
+            label: `Kondisi: ${CONDITION_LABEL[filters.condition as BookCondition]}`,
+        });
+    }
+    if (filters.language) {
+        chips.push({
+            key: 'language',
+            label: `Bahasa: ${LANG_LABEL[filters.language] ?? filters.language}`,
+        });
+    }
+    if (filters.audience) {
+        chips.push({
+            key: 'audience',
+            label: `Segmen: ${AUDIENCE_LABEL[filters.audience] ?? filters.audience}`,
+        });
+    }
+    if (filters.min_price) {
+        chips.push({
+            key: 'min_price',
+            label: `≥ ${rupiah.format(Number(filters.min_price))}`,
+        });
+    }
+    if (filters.max_price) {
+        chips.push({
+            key: 'max_price',
+            label: `≤ ${rupiah.format(Number(filters.max_price))}`,
+        });
+    }
+
+    const activeCount = chips.length;
 
     return (
         <div className="min-h-screen bg-background">
             <Head title="Katalog Buku" />
             <SiteHeader />
 
-            <main className="mx-auto max-w-6xl px-4 py-8">
-                <Reveal as="section" className="mb-8">
-                    <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
-                        Katalog
-                    </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        {books.total} buku tersedia — tiap eksemplar unik.
-                    </p>
-                </Reveal>
-
-                <div className="grid gap-8 md:grid-cols-[16rem_1fr]">
-                    <aside>
-                        <Form
-                            action={CatalogController.index().url}
-                            method="get"
-                            className="space-y-4 rounded-xl border border-border bg-card p-4 md:sticky md:top-20"
-                        >
-                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                                <SlidersHorizontal className="size-4 text-primary" />
-                                Filter
-                            </div>
-
-                            <div>
-                                <Label htmlFor="search">Cari</Label>
-                                <Input
-                                    id="search"
-                                    name="search"
-                                    defaultValue={filters.search ?? ''}
-                                    placeholder="Judul / penulis"
-                                    className="bg-card"
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="sort">Urutkan</Label>
-                                <select
-                                    id="sort"
-                                    name="sort"
-                                    defaultValue={filters.sort ?? ''}
-                                    className={selectClass}
-                                >
-                                    <option value="">Terbaru</option>
-                                    <option value="price_asc">
-                                        Harga termurah
-                                    </option>
-                                    <option value="price_desc">
-                                        Harga termahal
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="category">Kategori</Label>
-                                <select
-                                    id="category"
-                                    name="category"
-                                    defaultValue={filters.category ?? ''}
-                                    className={selectClass}
-                                >
-                                    <option value="">Semua</option>
-                                    {roots.map((root) => (
-                                        <optgroup
-                                            key={root.id}
-                                            label={root.name}
-                                        >
-                                            <option value={root.slug}>
-                                                Semua {root.name}
-                                            </option>
-                                            {childrenOf(root.id).map(
-                                                (child) => (
-                                                    <option
-                                                        key={child.id}
-                                                        value={child.slug}
-                                                    >
-                                                        {child.name}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </optgroup>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {tags.length > 0 && (
-                                <div>
-                                    <Label htmlFor="tag">Tag</Label>
-                                    <select
-                                        id="tag"
-                                        name="tag"
-                                        defaultValue={filters.tag ?? ''}
-                                        className={selectClass}
+            <main className="mx-auto max-w-7xl px-4 py-6">
+                <div className="grid gap-6 md:grid-cols-[15rem_1fr]">
+                    {/* Sidebar filter — desktop */}
+                    <aside className="hidden md:block">
+                        <div className="sticky top-20 rounded-xl border border-border bg-card px-4 py-2">
+                            <div className="flex items-center justify-between border-b border-border py-2">
+                                <span className="flex items-center gap-2 text-sm font-semibold">
+                                    <SlidersHorizontal className="size-4 text-primary" />
+                                    Filter
+                                </span>
+                                {activeCount > 0 && (
+                                    <Link
+                                        href={CatalogController.index()}
+                                        className="text-xs font-medium text-primary"
                                     >
-                                        <option value="">Semua</option>
-                                        {tags.map((tag) => (
-                                            <option
-                                                key={tag.id}
-                                                value={tag.slug}
-                                            >
-                                                {tag.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            <div>
-                                <Label htmlFor="condition">Kondisi</Label>
-                                <select
-                                    id="condition"
-                                    name="condition"
-                                    defaultValue={filters.condition ?? ''}
-                                    className={selectClass}
-                                >
-                                    <option value="">Semua</option>
-                                    {Object.entries(CONDITION_LABEL).map(
-                                        ([value, label]) => (
-                                            <option key={value} value={value}>
-                                                {label}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="language">Bahasa</Label>
-                                <select
-                                    id="language"
-                                    name="language"
-                                    defaultValue={filters.language ?? ''}
-                                    className={selectClass}
-                                >
-                                    <option value="">Semua</option>
-                                    <option value="id">Indonesia</option>
-                                    <option value="en">Inggris</option>
-                                    <option value="lainnya">Lainnya</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="audience">Segmen</Label>
-                                <select
-                                    id="audience"
-                                    name="audience"
-                                    defaultValue={filters.audience ?? ''}
-                                    className={selectClass}
-                                >
-                                    <option value="">Semua</option>
-                                    <option value="umum">Umum</option>
-                                    <option value="anak">Anak</option>
-                                    <option value="remaja">Remaja</option>
-                                    <option value="dewasa">Dewasa</option>
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <Label htmlFor="min_price">Harga min</Label>
-                                    <Input
-                                        id="min_price"
-                                        name="min_price"
-                                        type="number"
-                                        min={0}
-                                        defaultValue={filters.min_price ?? ''}
-                                        className="bg-card"
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="max_price">Harga max</Label>
-                                    <Input
-                                        id="max_price"
-                                        name="max_price"
-                                        type="number"
-                                        min={0}
-                                        defaultValue={filters.max_price ?? ''}
-                                        className="bg-card"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2 pt-1">
-                                <Button type="submit" className="flex-1">
-                                    Terapkan
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href={CatalogController.index()}>
                                         Reset
                                     </Link>
-                                </Button>
+                                )}
                             </div>
-                        </Form>
+                            <CatalogFilters
+                                filters={filters}
+                                categories={categories}
+                            />
+                        </div>
                     </aside>
 
                     <section>
+                        {/* Top bar: search + sort + mobile filter */}
+                        <div className="mb-4 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Sheet
+                                    open={sheetOpen}
+                                    onOpenChange={setSheetOpen}
+                                >
+                                    <SheetTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="md:hidden"
+                                        >
+                                            <SlidersHorizontal className="size-4" />
+                                            Filter
+                                            {activeCount > 0 && (
+                                                <Badge className="ml-1">
+                                                    {activeCount}
+                                                </Badge>
+                                            )}
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent
+                                        side="left"
+                                        className="w-80 overflow-y-auto"
+                                    >
+                                        <SheetHeader>
+                                            <SheetTitle>Filter</SheetTitle>
+                                        </SheetHeader>
+                                        <div className="px-4 pb-6">
+                                            <CatalogFilters
+                                                filters={filters}
+                                                categories={categories}
+                                                onApplied={() =>
+                                                    setSheetOpen(false)
+                                                }
+                                            />
+                                            {activeCount > 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    className="mt-4 w-full"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={CatalogController.index()}
+                                                    >
+                                                        Reset filter
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </SheetContent>
+                                </Sheet>
+
+                                <div className="ml-auto flex items-center gap-2">
+                                    <label
+                                        htmlFor="sort"
+                                        className="hidden text-sm text-muted-foreground sm:inline"
+                                    >
+                                        Urutkan
+                                    </label>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-40 justify-between"
+                                            >
+                                                {SORTS.find(
+                                                    (s) =>
+                                                        s.value ===
+                                                        (filters.sort ?? ''),
+                                                )?.label ?? 'Terbaru'}
+                                                <ChevronDown className="size-4 opacity-60" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-40"
+                                        >
+                                            {SORTS.map((s) => (
+                                                <DropdownMenuItem
+                                                    key={s.value || 'latest'}
+                                                    onClick={() =>
+                                                        apply({
+                                                            sort:
+                                                                s.value ||
+                                                                undefined,
+                                                        })
+                                                    }
+                                                >
+                                                    <Check
+                                                        className={
+                                                            (filters.sort ??
+                                                                '') === s.value
+                                                                ? 'opacity-100'
+                                                                : 'opacity-0'
+                                                        }
+                                                    />
+                                                    {s.label}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                    {books.total} buku
+                                </span>
+                                {chips.map((chip) => (
+                                    <button
+                                        key={chip.key}
+                                        type="button"
+                                        onClick={() =>
+                                            apply({ [chip.key]: undefined })
+                                        }
+                                        className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-accent/50"
+                                    >
+                                        {chip.label}
+                                        <X className="size-3" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         {books.data.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
                                 <p className="font-serif text-lg text-foreground">
@@ -268,14 +300,14 @@ export default function Catalog({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {books.data.map((book, i) => {
                                     const cover = book.primary_image?.[0];
 
                                     return (
                                         <Reveal
                                             key={book.id}
-                                            delay={Math.min(i, 9) * 45}
+                                            delay={Math.min(i, 9) * 40}
                                             className="h-full"
                                         >
                                             <Link
@@ -308,16 +340,16 @@ export default function Catalog({
                                                         }
                                                     </Badge>
                                                 </div>
-                                                <div className="flex flex-1 flex-col gap-1 p-3">
-                                                    <h3 className="line-clamp-2 font-serif font-medium text-foreground">
+                                                <div className="flex flex-1 flex-col gap-0.5 p-2.5">
+                                                    <h3 className="line-clamp-2 text-sm font-medium text-foreground">
                                                         {book.title}
                                                     </h3>
                                                     {book.author && (
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="truncate text-xs text-muted-foreground">
                                                             {book.author}
                                                         </p>
                                                     )}
-                                                    <p className="mt-auto pt-1 font-semibold text-primary">
+                                                    <p className="mt-auto pt-1 text-sm font-semibold text-primary">
                                                         {rupiah.format(
                                                             book.price,
                                                         )}
