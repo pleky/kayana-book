@@ -71,6 +71,19 @@ it('reprices and blocks payment when the book price changed', function () {
     expect($order->refresh()->total)->toBe(70000);
 });
 
+it('records a detail-update event when the book title changes', function () {
+    $user = User::factory()->create();
+    [$order, $book] = pricedOrder($user, 50000);
+
+    $book->update(['title' => 'Judul Baru']);
+
+    actingAs($user)->get(route('orders.show', $order))->assertOk();
+
+    $event = $order->events()->where('type', 'repriced')->first();
+    expect($event)->not->toBeNull()
+        ->and($event->meta['items'][0]['title_to'])->toBe('Judul Baru');
+});
+
 it('snapshots the book cover onto a pending order item', function () {
     $user = User::factory()->create();
     [$order, $book] = pricedOrder($user, 50000);

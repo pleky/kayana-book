@@ -35,6 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pesanan/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('pesanan/{order}/bayar', [PaymentController::class, 'pay'])->name('orders.pay');
     Route::post('pesanan/{order}/terima', [OrderController::class, 'confirmReceived'])->name('orders.received');
+    Route::post('pesanan/{order}/bukti', [OrderController::class, 'uploadProofs'])->name('orders.proofs.store');
+    Route::get('pesanan/{order}/bukti/{index}', [OrderController::class, 'proof'])->name('orders.proof');
 });
 
 // Midtrans server-to-server webhook — no auth/CSRF (exempted in bootstrap/app.php).

@@ -8,8 +8,10 @@ use App\Services\Payment\MidtransService;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
@@ -78,10 +80,11 @@ class OrderController extends Controller
             session()->flash('success', 'Harga/detail buku diperbarui ke versi terbaru.');
         }
 
-        $order->load('items');
+        $order->load(['items', 'events']);
 
         return Inertia::render('orders/show', [
             'order' => $order,
+            'events' => $order->events,
             'bank' => [
                 'bank' => 'BCA',
                 'account_number' => '1234567890',
@@ -92,20 +95,64 @@ class OrderController extends Controller
                 'client_key' => (string) config('services.midtrans.client_key'),
                 'snap_url' => (string) config('services.midtrans.snap_url'),
             ],
+            'proofCount' => count($order->received_proof_paths ?? []),
+            'maxProofs' => OrderService::MAX_PROOFS,
         ]);
     }
 
     /**
-     * Buyer confirms the shipped order has arrived, finishing it and notifying
-     * the seller.
+     * Buyer confirms the shipped order has arrived (ship only). Proof photos are
+     * uploaded separately ({@see uploadProofs}). Finishes the order.
      */
     public function confirmReceived(Request $request, Order $order, OrderService $orders): RedirectResponse
     {
         abort_unless($order->user_id === $request->user()->id, 403);
-        abort_unless($order->status === 'shipped', 422, 'Pesanan belum dikirim.');
+        abort_unless($order->fulfillment === 'ship' && $order->status === 'shipped', 422, 'Pesanan belum dikirim.');
 
-        $orders->complete($order);
+        $orders->confirmReceived($order);
 
         return back()->with('success', 'Terima kasih, pesanan selesai.');
+    }
+
+    /**
+     * Append up to MAX_PROOFS shipment-proof photos to a ship order (partial
+     * upload — callable repeatedly). Stored on the private disk.
+     */
+    public function uploadProofs(Request $request, Order $order, OrderService $orders): RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+        abort_unless($order->fulfillment === 'ship' && in_array($order->status, ['shipped', 'completed'], true), 422, 'Pesanan belum dikirim.');
+
+        $remaining = OrderService::MAX_PROOFS - count($order->received_proof_paths ?? []);
+        abort_if($remaining < 1, 422, 'Bukti sudah maksimal ('.OrderService::MAX_PROOFS.' foto).');
+
+        $request->validate([
+            'photos' => ['required', 'array', 'min:1', 'max:'.$remaining],
+            'photos.*' => ['image', 'max:5120'],
+        ]);
+
+        $paths = collect($request->file('photos'))
+            ->map(fn ($photo): string => $photo->store('order-proofs', 'local'))
+            ->all();
+
+        $orders->addProofs($order, $paths);
+
+        return back()->with('success', 'Bukti pengiriman diunggah.');
+    }
+
+    /**
+     * Stream a private proof photo (by index) to the order's owner or an admin.
+     */
+    public function proof(Request $request, Order $order, int $index): StreamedResponse
+    {
+        abort_unless(
+            $order->user_id === $request->user()->id || $request->user()->can('admin'),
+            403,
+        );
+
+        $path = ($order->received_proof_paths ?? [])[$index] ?? null;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path);
     }
 }

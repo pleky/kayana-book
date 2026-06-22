@@ -96,11 +96,44 @@ export type Order = {
     expires_at: string | null;
     cancel_reason: string | null;
     paid_at: string | null;
+    completed_at: string | null;
+    received_at: string | null;
+    received_proof_paths: string[] | null;
+    shipping_etd?: string | null;
     created_at: string;
     items?: OrderItem[];
     items_count?: number;
     has_updates?: boolean;
     user?: { id: number; name: string; email?: string } | null;
+};
+
+export type OrderEvent = {
+    id: number;
+    type:
+        | 'created'
+        | 'ongkir_set'
+        | 'repriced'
+        | 'paid'
+        | 'shipped'
+        | 'received'
+        | 'completed'
+        | 'cancelled';
+    description: string;
+    meta: {
+        items?: {
+            name: string;
+            price_from?: number;
+            price_to?: number;
+            title_from?: string;
+            title_to?: string;
+        }[];
+        amount?: number;
+        resi?: string;
+        courier?: string;
+        service?: string;
+        reason?: string;
+    } | null;
+    created_at: string;
 };
 
 export type Paginated<T> = {

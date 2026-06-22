@@ -43,6 +43,9 @@ class Order extends Model
         'expires_at',
         'cancel_reason',
         'paid_at',
+        'completed_at',
+        'received_at',
+        'received_proof_paths',
     ];
 
     /**
@@ -59,6 +62,9 @@ class Order extends Model
             'expires_at' => 'datetime',
             'paid_at' => 'datetime',
             'shipped_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'received_at' => 'datetime',
+            'received_proof_paths' => 'array',
         ];
     }
 
@@ -76,5 +82,13 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * @return HasMany<OrderEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(OrderEvent::class)->orderBy('id');
     }
 }

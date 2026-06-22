@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\OrderEventType;
 use App\Exceptions\CartConflictException;
 use App\Models\Book;
 use App\Models\Order;
@@ -126,6 +127,8 @@ class OrderService
                 ])->all(),
             );
 
+            $this->recordEvent($order, OrderEventType::Created, 'Pesanan dibuat.');
+
             $this->cart->clear();
 
             return $order;
@@ -215,6 +218,9 @@ class OrderService
         $changed = false;
 
         DB::transaction(function () use ($order, $books, &$changed): void {
+            /** @var list<array<string, mixed>> $changes */
+            $changes = [];
+
             foreach ($order->items as $item) {
                 $book = $item->book_id ? $books->get($item->book_id) : null;
 
@@ -223,9 +229,24 @@ class OrderService
                 }
 
                 $cover = $book->primaryImage->first()?->path;
+                $priceChanged = (int) $item->price !== (int) $book->price;
+                $titleChanged = $item->title !== $book->title;
 
-                if ($item->price !== (int) $book->price
-                    || $item->title !== $book->title
+                if ($priceChanged || $titleChanged) {
+                    $entry = ['name' => (string) $book->title];
+                    if ($priceChanged) {
+                        $entry['price_from'] = (int) $item->price;
+                        $entry['price_to'] = (int) $book->price;
+                    }
+                    if ($titleChanged) {
+                        $entry['title_from'] = (string) $item->title;
+                        $entry['title_to'] = (string) $book->title;
+                    }
+                    $changes[] = $entry;
+                }
+
+                if ($priceChanged
+                    || $titleChanged
                     || $item->cover_path !== $cover) {
                     $item->update([
                         'price' => $book->price,
@@ -246,6 +267,10 @@ class OrderService
                 'subtotal' => $subtotal,
                 'total' => $subtotal + $order->shipping_cost,
             ]);
+
+            if ($changes !== []) {
+                $this->recordRepriced($order, $changes);
+            }
         });
 
         return $changed;
@@ -297,6 +322,11 @@ class OrderService
                 'paid_at' => now(),
                 'expires_at' => null,
             ]);
+
+            $channel = $order->payment_channel
+                ? ' ('.self::humanizePaymentChannel($order->payment_channel).')'
+                : '';
+            $this->recordEvent($order, OrderEventType::Paid, "Pembayaran diterima{$channel}.");
         });
 
         $this->notifyAdmins(new OrderPaid($order));
@@ -309,11 +339,20 @@ class OrderService
      */
     public function markShipped(Order $order, ?string $trackingNumber): void
     {
-        $order->update([
-            'status' => 'shipped',
-            'shipping_tracking_number' => $trackingNumber,
-            'shipped_at' => now(),
-        ]);
+        DB::transaction(function () use ($order, $trackingNumber): void {
+            $order->update([
+                'status' => 'shipped',
+                'shipping_tracking_number' => $trackingNumber,
+                'shipped_at' => now(),
+            ]);
+
+            $resi = $trackingNumber ? " — resi {$trackingNumber}" : '';
+            $this->recordEvent($order, OrderEventType::Shipped, "Pesanan dikirim{$resi}.", array_filter([
+                'resi' => $trackingNumber,
+                'courier' => $order->shipping_courier,
+                'service' => $order->shipping_service,
+            ]));
+        });
 
         $order->user?->notify(new OrderShipped($order));
     }
@@ -344,9 +383,52 @@ class OrderService
      */
     public function complete(Order $order): void
     {
-        $order->update(['status' => 'completed']);
+        DB::transaction(function () use ($order): void {
+            $order->update(['status' => 'completed', 'completed_at' => now()]);
+            $this->recordEvent($order, OrderEventType::Completed, 'Pesanan selesai.');
+        });
 
         $this->notifyAdmins(new OrderCompleted($order));
+    }
+
+    /**
+     * Maximum proof photos a buyer may attach to a shipped order.
+     */
+    public const MAX_PROOFS = 3;
+
+    /**
+     * Buyer confirms a shipped order arrived. Records the receipt then completes
+     * the order. Proof photos are attached separately via {@see addProofs} so
+     * they can be uploaded partially, before or after completion.
+     */
+    public function confirmReceived(Order $order): void
+    {
+        DB::transaction(function () use ($order): void {
+            $order->update(['received_at' => now()]);
+            $this->recordEvent($order, OrderEventType::Received, 'Pesanan diterima pembeli.');
+        });
+
+        $this->complete($order);
+    }
+
+    /**
+     * Append proof photo paths (private disk) to an order, capped at MAX_PROOFS.
+     * Supports partial upload — call repeatedly. Returns the stored paths.
+     *
+     * @param  list<string>  $newPaths
+     * @return list<string>
+     */
+    public function addProofs(Order $order, array $newPaths): array
+    {
+        $paths = array_slice(
+            array_merge($order->received_proof_paths ?? [], array_values($newPaths)),
+            0,
+            self::MAX_PROOFS,
+        );
+
+        $order->update(['received_proof_paths' => $paths]);
+
+        return $paths;
     }
 
     /**
@@ -355,10 +437,17 @@ class OrderService
      */
     public function setShipping(Order $order, int $shippingCost): void
     {
-        $order->update([
-            'shipping_cost' => $shippingCost,
-            'total' => $order->subtotal + $shippingCost,
-        ]);
+        DB::transaction(function () use ($order, $shippingCost): void {
+            $order->update([
+                'shipping_cost' => $shippingCost,
+                'total' => $order->subtotal + $shippingCost,
+            ]);
+
+            $amount = number_format($shippingCost, 0, ',', '.');
+            $this->recordEvent($order, OrderEventType::OngkirSet, "Ongkir ditetapkan Rp{$amount}.", [
+                'amount' => $shippingCost,
+            ]);
+        });
 
         if ($order->fulfillment === 'ship' && $order->status === 'pending') {
             $order->user?->notify(new OrderReadyToPay($order));
@@ -380,6 +469,10 @@ class OrderService
                 'status' => 'cancelled',
                 'cancel_reason' => $reason,
                 'expires_at' => null,
+            ]);
+
+            $this->recordEvent($order, OrderEventType::Cancelled, "Pesanan dibatalkan ({$reason}).", [
+                'reason' => $reason,
             ]);
         });
     }
@@ -418,6 +511,70 @@ class OrderService
         }
 
         return $stale->count();
+    }
+
+    /**
+     * Append an audit/timeline event to an order. Call within the same
+     * transaction as the state change so the log never outlives a rollback.
+     *
+     * @param  array<string, mixed>  $meta
+     */
+    public function recordEvent(Order $order, OrderEventType $type, string $description, array $meta = []): void
+    {
+        $order->events()->create([
+            'type' => $type,
+            'description' => $description,
+            'meta' => $meta === [] ? null : $meta,
+        ]);
+    }
+
+    /**
+     * Record a `repriced` event (price and/or title drift), skipping a
+     * back-to-back duplicate (same items).
+     *
+     * @param  list<array<string, mixed>>  $items
+     */
+    private function recordRepriced(Order $order, array $items): void
+    {
+        $last = $order->events()
+            ->where('type', OrderEventType::Repriced->value)
+            ->latest('id')
+            ->first();
+
+        if ($last && ($last->meta['items'] ?? null) == $items) {
+            return;
+        }
+
+        $this->recordEvent($order, OrderEventType::Repriced, 'Detail buku diperbarui.', [
+            'items' => $items,
+        ]);
+    }
+
+    /**
+     * Human-readable label for a Midtrans payment channel / method code.
+     */
+    public static function humanizePaymentChannel(?string $channel): string
+    {
+        $map = [
+            'qris' => 'QRIS',
+            'gopay' => 'GoPay',
+            'shopeepay' => 'ShopeePay',
+            'dana' => 'DANA',
+            'bank_transfer' => 'Transfer Bank',
+            'bca_va' => 'Virtual Account BCA',
+            'bni_va' => 'Virtual Account BNI',
+            'bri_va' => 'Virtual Account BRI',
+            'permata_va' => 'Virtual Account Permata',
+            'echannel' => 'Mandiri Bill',
+            'credit_card' => 'Kartu Kredit',
+            'cstore' => 'Gerai Retail',
+            'transfer' => 'Transfer Bank',
+            'cash' => 'Tunai',
+        ];
+
+        $channel = (string) $channel;
+
+        return $map[$channel] ?? ucwords(str_replace('_', ' ', $channel));
     }
 
     /**

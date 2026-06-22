@@ -1,13 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import SiteHeader from '@/components/catalog/site-header';
 import { useConfirm } from '@/components/confirm-dialog';
+import OrderEventList from '@/components/orders/order-event-list';
+import OrderStatusTimeline from '@/components/orders/order-status-timeline';
+import ProofUploader from '@/components/orders/proof-uploader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Order, OrderStatus } from '@/types';
+import type { Order, OrderEvent, OrderStatus } from '@/types';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
     pending: 'Menunggu pembayaran',
@@ -35,12 +38,7 @@ const rupiah = new Intl.NumberFormat('id-ID', {
 });
 
 type Bank = { bank: string; account_number: string; account_name: string };
-
-type Payment = {
-    gateway_enabled: boolean;
-    client_key: string;
-    snap_url: string;
-};
+type Payment = { gateway_enabled: boolean; client_key: string; snap_url: string };
 
 type SnapCallbacks = {
     onSuccess?: () => void;
@@ -67,33 +65,36 @@ function cookie(name: string): string {
 
 export default function OrderShow({
     order,
+    events,
     bank,
     payment,
+    proofCount,
+    maxProofs,
 }: {
     order: Order;
+    events: OrderEvent[];
     bank: Bank;
     payment: Payment;
+    proofCount: number;
+    maxProofs: number;
 }) {
     const confirm = useConfirm();
     const [loading, setLoading] = useState(false);
     const [awaiting, setAwaiting] = useState(false);
     const useGateway = payment.gateway_enabled;
-
-    // Ship orders whose ongkir the seller hasn't confirmed yet (cost still 0)
-    // can't be paid — the total would be wrong. Gate payment until it's set.
     const awaitingOngkir =
         order.fulfillment === 'ship' && order.shipping_cost === 0;
+    const isShip = order.fulfillment === 'ship';
+    const showProofs =
+        isShip && ['shipped', 'completed'].includes(order.status);
 
-    // Load the Snap script once when the gateway is enabled for a pending order.
     useEffect(() => {
         if (!useGateway || order.status !== 'pending') {
             return;
         }
-
         if (document.querySelector('script[data-midtrans]')) {
             return;
         }
-
         const script = document.createElement('script');
         script.src = payment.snap_url;
         script.setAttribute('data-client-key', payment.client_key);
@@ -101,20 +102,16 @@ export default function OrderShow({
         document.body.appendChild(script);
     }, [useGateway, order.status, payment.snap_url, payment.client_key]);
 
-    // The webhook is the source of truth and lands a moment after the popup
-    // closes (async for QRIS/VA), so poll the order until it leaves `pending`.
     useEffect(() => {
         if (!awaiting || order.status !== 'pending') {
             setAwaiting(false);
 
             return;
         }
-
         let ticks = 0;
         const timer = setInterval(() => {
             ticks += 1;
-            router.reload({ only: ['order'] });
-
+            router.reload({ only: ['order', 'events'] });
             if (ticks >= 20) {
                 clearInterval(timer);
                 setAwaiting(false);
@@ -126,7 +123,6 @@ export default function OrderShow({
 
     const pay = async () => {
         setLoading(true);
-
         try {
             const res = await fetch(PaymentController.pay(order.id).url, {
                 method: 'POST',
@@ -137,28 +133,23 @@ export default function OrderShow({
                 },
             });
 
-            // Price changed since last view — reload so the buyer sees the new
-            // total instead of paying a stale amount.
             if (res.status === 409) {
                 const body = await res.json().catch(() => ({}));
                 toast.warning(body.message ?? 'Harga diperbarui.');
                 setLoading(false);
-                router.reload({ only: ['order'] });
+                router.reload({ only: ['order', 'events'] });
 
                 return;
             }
-
             if (!res.ok) {
                 throw new Error('pay');
             }
 
             const { snap_token } = await res.json();
-
             const startPolling = () => {
                 setLoading(false);
                 setAwaiting(true);
             };
-
             window.snap?.pay(snap_token, {
                 onSuccess: startPolling,
                 onPending: startPolling,
@@ -175,7 +166,7 @@ export default function OrderShow({
             <Head title={`Pesanan #${order.id}`} />
             <SiteHeader />
 
-            <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+            <main className="mx-auto max-w-2xl space-y-5 px-4 py-8">
                 <div className="flex items-center justify-between">
                     <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
                         Pesanan #{order.id}
@@ -185,6 +176,12 @@ export default function OrderShow({
                     </Badge>
                 </div>
 
+                {/* Status timeline */}
+                <section className="rounded-xl border border-border bg-card p-4">
+                    <OrderStatusTimeline order={order} />
+                </section>
+
+                {/* Payment (pending) */}
                 {order.status === 'pending' && (
                     <section className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
                         <h2 className="font-medium">Pembayaran</h2>
@@ -194,21 +191,20 @@ export default function OrderShow({
 
                         {awaitingOngkir ? (
                             <p className="text-sm text-muted-foreground">
-                                Menunggu penjual mengonfirmasi ongkir. Setelah
-                                ongkir ditetapkan, total final muncul di sini dan
-                                kamu bisa langsung membayar.
+                                Menunggu penjual mengonfirmasi ongkir. Total final
+                                muncul di sini, lalu kamu bisa membayar.
                             </p>
                         ) : awaiting ? (
                             <p className="text-sm text-muted-foreground">
-                                Menunggu konfirmasi pembayaran… halaman akan
-                                diperbarui otomatis.
+                                Menunggu konfirmasi pembayaran… halaman diperbarui
+                                otomatis.
                             </p>
                         ) : useGateway ? (
                             <>
                                 <p className="text-sm text-muted-foreground">
                                     Bayar aman via QRIS, Virtual Account, atau
-                                    e-wallet. Status pesanan diperbarui otomatis
-                                    setelah pembayaran berhasil.
+                                    e-wallet. Status diperbarui otomatis setelah
+                                    pembayaran berhasil.
                                 </p>
                                 <Button onClick={pay} disabled={loading}>
                                     {loading ? 'Memproses…' : 'Bayar sekarang'}
@@ -217,9 +213,8 @@ export default function OrderShow({
                         ) : (
                             <>
                                 <p className="text-sm text-muted-foreground">
-                                    Transfer tepat sebesar nominal di atas ke
-                                    rekening berikut, lalu konfirmasi ke penjual
-                                    via WhatsApp.
+                                    Transfer tepat sebesar nominal di atas, lalu
+                                    konfirmasi ke penjual via WhatsApp.
                                 </p>
                                 <dl className="text-sm">
                                     <div className="flex gap-2">
@@ -258,44 +253,11 @@ export default function OrderShow({
                     </section>
                 )}
 
-                {order.status === 'paid' && (
-                    <section className="rounded-xl border border-border bg-card p-4 text-sm">
-                        <h2 className="font-medium text-foreground">
-                            Pembayaran diterima
-                        </h2>
-                        <p className="mt-1 text-muted-foreground">
-                            {order.fulfillment === 'ship'
-                                ? 'Pesanan sedang disiapkan penjual dan akan segera dikirim. Nomor resi muncul di sini setelah dikirim.'
-                                : 'Pesanan sedang disiapkan. Silakan ambil di toko sesuai kesepakatan.'}
-                        </p>
-                    </section>
-                )}
-
-                {order.status === 'shipped' && (
-                    <section className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm">
-                        <h2 className="font-medium text-foreground">
-                            Pesanan dikirim
-                        </h2>
-                        {order.shipping_courier && (
-                            <p className="text-muted-foreground">
-                                Kurir:{' '}
-                                <span className="uppercase">
-                                    {order.shipping_courier}
-                                </span>{' '}
-                                {order.shipping_service}
-                            </p>
-                        )}
-                        {order.shipping_tracking_number && (
-                            <p>
-                                No. resi:{' '}
-                                <span className="font-mono font-medium">
-                                    {order.shipping_tracking_number}
-                                </span>
-                            </p>
-                        )}
-                        <p className="text-muted-foreground">
-                            Sudah terima barangnya? Konfirmasi untuk
-                            menyelesaikan pesanan.
+                {/* Confirm received (ship + shipped) */}
+                {isShip && order.status === 'shipped' && (
+                    <section className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Sudah terima barangnya?
                         </p>
                         <Button
                             onClick={async () => {
@@ -308,9 +270,8 @@ export default function OrderShow({
                                     })
                                 ) {
                                     router.post(
-                                        OrderController.confirmReceived(
-                                            order.id,
-                                        ).url,
+                                        OrderController.confirmReceived(order.id)
+                                            .url,
                                         {},
                                         { preserveScroll: true },
                                     );
@@ -322,20 +283,74 @@ export default function OrderShow({
                     </section>
                 )}
 
+                {/* Shipment proof — up to maxProofs, partial upload */}
+                {showProofs && (
+                    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+                        <h2 className="text-sm font-medium text-foreground">
+                            Bukti pengiriman ({proofCount}/{maxProofs})
+                        </h2>
+                        {proofCount > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {Array.from({ length: proofCount }).map(
+                                    (_, i) => (
+                                        <a
+                                            key={i}
+                                            href={
+                                                OrderController.proof({
+                                                    order: order.id,
+                                                    index: i,
+                                                }).url
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <img
+                                                src={
+                                                    OrderController.proof({
+                                                        order: order.id,
+                                                        index: i,
+                                                    }).url
+                                                }
+                                                alt={`Bukti ${i + 1}`}
+                                                className="size-24 rounded-lg border border-border object-cover"
+                                            />
+                                        </a>
+                                    ),
+                                )}
+                            </div>
+                        )}
+                        <ProofUploader
+                            order={order}
+                            remaining={maxProofs - proofCount}
+                        />
+                    </section>
+                )}
+
                 {order.status === 'cancelled' && order.cancel_reason && (
                     <p className="rounded-xl border p-4 text-sm text-muted-foreground">
                         Dibatalkan ({order.cancel_reason}).
                     </p>
                 )}
 
+                {/* Item summary */}
                 <section className="rounded-xl border border-border bg-card">
                     <ul className="divide-y divide-border">
                         {order.items?.map((item) => (
                             <li
                                 key={item.id}
-                                className="flex justify-between gap-2 p-3 text-sm"
+                                className="flex items-center gap-3 p-3 text-sm"
                             >
-                                <span className="min-w-0 truncate">
+                                {item.cover_path ? (
+                                    <img
+                                        src={`/storage/${item.cover_path}`}
+                                        alt={item.title}
+                                        loading="lazy"
+                                        className="h-12 w-9 shrink-0 rounded border border-border object-cover"
+                                    />
+                                ) : (
+                                    <div className="h-12 w-9 shrink-0 rounded border border-border bg-muted" />
+                                )}
+                                <span className="min-w-0 flex-1 truncate">
                                     {item.title}
                                 </span>
                                 <span>{rupiah.format(item.price)}</span>
@@ -351,7 +366,7 @@ export default function OrderShow({
                             <dt className="text-muted-foreground">
                                 Ongkir
                                 {order.shipping_cost === 0 &&
-                                    order.fulfillment === 'ship' &&
+                                    isShip &&
                                     ' (menunggu konfirmasi)'}
                             </dt>
                             <dd>{rupiah.format(order.shipping_cost)}</dd>
@@ -362,6 +377,9 @@ export default function OrderShow({
                         </div>
                     </dl>
                 </section>
+
+                {/* History */}
+                <OrderEventList events={events} />
 
                 <div>
                     <Button variant="outline" asChild>
