@@ -17,10 +17,19 @@ class PaymentController extends Controller
      * XHR from the order page; the frontend then opens the Snap popup. The real
      * source of truth for payment is the webhook, not this response.
      */
-    public function pay(Request $request, Order $order): JsonResponse
+    public function pay(Request $request, Order $order, OrderService $orders): JsonResponse
     {
         abort_unless($order->user_id === $request->user()->id, 403);
         abort_unless($order->status === 'pending', 422, 'Pesanan tidak menunggu pembayaran.');
+
+        // Charge the latest book prices; if they shifted, make the buyer review
+        // the new total before opening the payment popup.
+        if ($orders->syncPendingFromBooks($order)) {
+            return response()->json([
+                'repriced' => true,
+                'message' => 'Harga diperbarui. Periksa total terbaru sebelum membayar.',
+            ], 409);
+        }
 
         if ($order->fulfillment === 'ship' && $order->shipping_cost === 0) {
             return response()->json(['message' => 'Ongkir belum dikonfirmasi penjual.'], 422);

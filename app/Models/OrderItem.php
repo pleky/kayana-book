@@ -16,6 +16,7 @@ class OrderItem extends Model
         'order_id',
         'book_id',
         'title',
+        'cover_path',
         'price',
     ];
 

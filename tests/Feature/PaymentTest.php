@@ -48,8 +48,13 @@ it('issues a snap token for the buyer pending order', function () {
     ]);
 
     $user = User::factory()->create();
-    $order = Order::factory()->for($user)->create(['total' => 150000]);
-    $book = Book::factory()->create(['status' => 'reserved']);
+    $book = Book::factory()->create(['status' => 'reserved', 'price' => 150000]);
+    $order = Order::factory()->for($user)->create([
+        'subtotal' => 150000,
+        'total' => 150000,
+        'shipping_cost' => 0,
+        'fulfillment' => 'pickup',
+    ]);
     $order->items()->create(['book_id' => $book->id, 'title' => $book->title, 'price' => 150000]);
 
     actingAs($user)

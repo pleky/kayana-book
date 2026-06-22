@@ -74,6 +74,7 @@ export type OrderItem = {
     title: string;
     price: number;
     book_id: number | null;
+    cover_path?: string | null;
 };
 
 export type Order = {
@@ -98,6 +99,7 @@ export type Order = {
     created_at: string;
     items?: OrderItem[];
     items_count?: number;
+    has_updates?: boolean;
     user?: { id: number; name: string; email?: string } | null;
 };
 

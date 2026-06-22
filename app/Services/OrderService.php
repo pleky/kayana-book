@@ -87,7 +87,7 @@ class OrderService
             }
 
             /** @var Collection<int, Book> $books */
-            $books = Book::whereIn('id', $ids)->get();
+            $books = Book::whereIn('id', $ids)->with('primaryImage')->get();
 
             $subtotal = (int) $books->sum('price');
 
@@ -121,6 +121,7 @@ class OrderService
                 $books->map(fn (Book $book): array => [
                     'book_id' => $book->id,
                     'title' => $book->title,
+                    'cover_path' => $book->primaryImage->first()?->path,
                     'price' => $book->price,
                 ])->all(),
             );
@@ -182,6 +183,103 @@ class OrderService
             'shipping_etd' => $chosen['etd'],
             'shipping_weight_grams' => $weight,
         ];
+    }
+
+    /**
+     * Re-sync a pending order's item snapshots (price, title, cover) and total
+     * from the current book records, so the buyer always pays the latest price
+     * up until payment. No-op once the order has left `pending` — paid/completed
+     * orders stay frozen. Returns whether anything changed.
+     */
+    public function syncPendingFromBooks(Order $order): bool
+    {
+        if ($order->status !== 'pending') {
+            return false;
+        }
+
+        $order->loadMissing('items');
+
+        $bookIds = $order->items->pluck('book_id')->filter()->all();
+
+        if ($bookIds === []) {
+            return false;
+        }
+
+        /** @var \Illuminate\Support\Collection<int, Book> $books */
+        $books = Book::withTrashed()
+            ->with('primaryImage')
+            ->whereIn('id', $bookIds)
+            ->get()
+            ->keyBy('id');
+
+        $changed = false;
+
+        DB::transaction(function () use ($order, $books, &$changed): void {
+            foreach ($order->items as $item) {
+                $book = $item->book_id ? $books->get($item->book_id) : null;
+
+                if ($book === null) {
+                    continue; // book gone — keep the snapshot
+                }
+
+                $cover = $book->primaryImage->first()?->path;
+
+                if ($item->price !== (int) $book->price
+                    || $item->title !== $book->title
+                    || $item->cover_path !== $cover) {
+                    $item->update([
+                        'price' => $book->price,
+                        'title' => $book->title,
+                        'cover_path' => $cover,
+                    ]);
+                    $changed = true;
+                }
+            }
+
+            $subtotal = (int) $order->items()->sum('price');
+
+            if ($order->subtotal !== $subtotal) {
+                $changed = true;
+            }
+
+            $order->update([
+                'subtotal' => $subtotal,
+                'total' => $subtotal + $order->shipping_cost,
+            ]);
+        });
+
+        return $changed;
+    }
+
+    /**
+     * Read-only check: does a pending order have item snapshots that differ from
+     * the current book records (price/title/cover)? Used to flag "updated" orders
+     * on the list without mutating anything. Expects `items.book.primaryImage`
+     * eager-loaded by the caller to avoid N+1.
+     */
+    public function pendingHasBookChanges(Order $order): bool
+    {
+        if ($order->status !== 'pending') {
+            return false;
+        }
+
+        foreach ($order->items as $item) {
+            $book = $item->book;
+
+            if ($book === null) {
+                continue;
+            }
+
+            $cover = $book->primaryImage->first()?->path;
+
+            if ($item->price !== (int) $book->price
+                || $item->title !== $book->title
+                || $item->cover_path !== $cover) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
@@ -135,6 +136,17 @@ export default function OrderShow({
                     'X-XSRF-TOKEN': decodeURIComponent(cookie('XSRF-TOKEN')),
                 },
             });
+
+            // Price changed since last view — reload so the buyer sees the new
+            // total instead of paying a stale amount.
+            if (res.status === 409) {
+                const body = await res.json().catch(() => ({}));
+                toast.warning(body.message ?? 'Harga diperbarui.');
+                setLoading(false);
+                router.reload({ only: ['order'] });
+
+                return;
+            }
 
             if (!res.ok) {
                 throw new Error('pay');
