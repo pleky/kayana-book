@@ -8,9 +8,15 @@ import {
     Brain,
     Briefcase,
     Camera,
+    Clock,
     GraduationCap,
+    Instagram,
     Landmark,
     Languages,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Phone,
     Rocket,
     ScrollText,
     Search,
@@ -26,8 +32,36 @@ import type { CSSProperties } from 'react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import SiteHeader from '@/components/catalog/site-header';
 import { Reveal } from '@/components/motion/reveal';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { BookCategory } from '@/types';
+import type { Book, BookCategory, BookCondition } from '@/types';
+
+type Store = {
+    name: string;
+    tagline: string;
+    address: string;
+    hours: string;
+    phone: string;
+    whatsapp: string;
+    email: string;
+    instagram: string;
+    maps_url: string;
+    gallery: string[];
+};
+
+const CONDITION_LABEL: Record<BookCondition, string> = {
+    new: 'Baru',
+    like_new: 'Seperti baru',
+    good: 'Bagus',
+    fair: 'Cukup',
+    poor: 'Kurang',
+};
+
+const rupiah = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+});
 
 const TRUST = [
     {
@@ -42,8 +76,8 @@ const TRUST = [
     },
     {
         icon: Wallet,
-        title: 'Bayar transfer, gampang',
-        body: 'Checkout, transfer bank, konfirmasi. Pesanan langsung tercatat rapi.',
+        title: 'Bayar gampang',
+        body: 'Checkout, bayar via gateway atau transfer, pesanan langsung tercatat rapi.',
     },
 ];
 
@@ -82,14 +116,16 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
 
 export default function Welcome({
     categories,
+    latestBooks,
+    store,
 }: {
     categories: BookCategory[];
+    latestBooks: Book[];
+    store: Store;
 }) {
     const progressRef = useRef<HTMLDivElement>(null);
     const parallaxRef = useRef<HTMLDivElement>(null);
 
-    // Scroll-progress bar + subtle hero parallax. rAF-throttled, GPU-safe,
-    // and disabled for reduced-motion / touch devices.
     useEffect(() => {
         const reduce = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
@@ -123,11 +159,19 @@ export default function Welcome({
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
+    const waLink = store.whatsapp
+        ? `https://wa.me/${store.whatsapp.replace(/[^0-9]/g, '')}`
+        : null;
+    const igHandle = store.instagram.replace('@', '');
+    const igLink = igHandle ? `https://instagram.com/${igHandle}` : null;
+    const hasStoreInfo = Boolean(
+        store.address || store.maps_url || waLink || store.hours,
+    );
+
     return (
         <div className="min-h-screen bg-background">
-            <Head title="Kayana Book — Toko Buku Bekas" />
+            <Head title={`${store.name} — ${store.tagline}`} />
 
-            {/* Scroll progress */}
             <div
                 ref={progressRef}
                 aria-hidden="true"
@@ -139,24 +183,27 @@ export default function Welcome({
             <main>
                 {/* ---------- Hero ---------- */}
                 <section className="relative overflow-hidden">
-                    {/* depth-1 — ambient glow */}
                     <div
                         aria-hidden="true"
-                        className="animate-drift pointer-events-none absolute -top-24 -right-24 size-[28rem] rounded-full bg-brand/20 blur-3xl"
+                        className="animate-drift pointer-events-none absolute -top-24 -right-24 size-[28rem] rounded-full bg-brand/25 blur-3xl"
                     />
                     <div
                         aria-hidden="true"
-                        className="animate-drift pointer-events-none absolute top-40 -left-32 size-80 rounded-full bg-sky/20 blur-3xl"
+                        className="animate-drift pointer-events-none absolute top-40 -left-32 size-80 rounded-full bg-sky/25 blur-3xl"
                         style={{ animationDelay: '-6s' }}
+                    />
+                    <div
+                        aria-hidden="true"
+                        className="animate-drift pointer-events-none absolute -bottom-24 right-1/3 size-72 rounded-full bg-accent/40 blur-3xl"
+                        style={{ animationDelay: '-12s' }}
                     />
 
                     <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1.1fr_1fr] md:py-24">
-                        {/* depth-4 — hero text */}
                         <div className="space-y-6">
                             <Reveal delay={50}>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
                                     <BookOpen className="size-3.5 text-brand" />
-                                    Toko buku bekas &amp; baru
+                                    {store.tagline}
                                 </span>
                             </Reveal>
 
@@ -169,12 +216,12 @@ export default function Welcome({
                                             } as CSSProperties
                                         }
                                     >
-                                        Buku bekas bercerita,
+                                        Buku bercerita,
                                     </span>
                                 </span>
                                 <span className="line-reveal block overflow-hidden pb-1">
                                     <span
-                                        className="text-brand"
+                                        className="bg-gradient-to-r from-brand via-primary to-sky bg-clip-text text-transparent"
                                         style={
                                             {
                                                 '--line-delay': '260ms',
@@ -188,10 +235,9 @@ export default function Welcome({
 
                             <Reveal delay={420}>
                                 <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-                                    Telusuri ratusan judul pilihan dengan
-                                    kondisi jujur dan harga ramah. Temukan
-                                    bacaan berikutnya, satu eksemplar yang
-                                    benar-benar unik.
+                                    Telusuri ratusan judul pilihan dengan kondisi
+                                    jujur dan harga ramah — online maupun langsung
+                                    di toko kami.
                                 </p>
                             </Reveal>
 
@@ -202,20 +248,19 @@ export default function Welcome({
                                             Jelajahi katalog
                                         </Link>
                                     </Button>
-                                    <Button size="lg" variant="outline" asChild>
-                                        <Link
-                                            href={CatalogController.index({
-                                                query: { sort: 'price_asc' },
-                                            })}
+                                    {hasStoreInfo && (
+                                        <Button
+                                            size="lg"
+                                            variant="outline"
+                                            asChild
                                         >
-                                            Buku termurah
-                                        </Link>
-                                    </Button>
+                                            <a href="#toko">Kunjungi toko</a>
+                                        </Button>
+                                    )}
                                 </div>
                             </Reveal>
                         </div>
 
-                        {/* depth-2 — book-spine motif (parallax + float) */}
                         <div
                             ref={parallaxRef}
                             aria-hidden="true"
@@ -235,52 +280,79 @@ export default function Welcome({
                     </div>
                 </section>
 
-                {/* ---------- Categories ---------- */}
-                {categories.length > 0 && (
+                {/* ---------- Latest books ---------- */}
+                {latestBooks.length > 0 && (
                     <section className="border-t border-border/60">
                         <div className="mx-auto max-w-6xl px-4 py-16">
-                            <Reveal className="mb-8">
-                                <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
-                                    Jelajahi kategori
-                                </h2>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Genre dengan koleksi terbanyak.
-                                </p>
+                            <Reveal className="mb-8 flex items-end justify-between gap-4">
+                                <div>
+                                    <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
+                                        Baru diunggah
+                                    </h2>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Lima buku terbaru yang masuk koleksi.
+                                    </p>
+                                </div>
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href={CatalogController.index()}>
+                                        Lihat semua →
+                                    </Link>
+                                </Button>
                             </Reveal>
 
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                                {categories.map((category, i) => {
-                                    const Icon =
-                                        CATEGORY_ICON[category.slug ?? ''] ??
-                                        BookOpen;
+                                {latestBooks.map((book, i) => {
+                                    const cover = book.primary_image?.[0];
 
                                     return (
                                         <Reveal
-                                            key={category.id}
+                                            key={book.id}
                                             delay={Math.min(i, 9) * 45}
                                             className="h-full"
                                         >
                                             <Link
-                                                href={CatalogController.index({
-                                                    query: {
-                                                        category: category.slug,
-                                                    },
-                                                })}
-                                                className="group flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                                                href={CatalogController.show(
+                                                    book.slug,
+                                                )}
+                                                className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
                                             >
-                                                <span
-                                                    className={`inline-flex size-10 items-center justify-center rounded-lg ${CHIP[i % CHIP.length]}`}
-                                                >
-                                                    <Icon className="size-5" />
-                                                </span>
-                                                <div>
-                                                    <h3 className="font-serif font-medium text-foreground">
-                                                        {category.name}
+                                                <div className="relative aspect-3/4 overflow-hidden bg-muted">
+                                                    {cover ? (
+                                                        <img
+                                                            src={`/storage/${cover.path}`}
+                                                            alt={`Sampul ${book.title}`}
+                                                            loading="lazy"
+                                                            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                                                            Tanpa foto
+                                                        </div>
+                                                    )}
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="absolute top-2 left-2 backdrop-blur"
+                                                    >
+                                                        {
+                                                            CONDITION_LABEL[
+                                                                book.condition
+                                                            ]
+                                                        }
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex flex-1 flex-col gap-0.5 p-2.5">
+                                                    <h3 className="line-clamp-2 text-sm font-medium text-foreground">
+                                                        {book.title}
                                                     </h3>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {category.books_count ??
-                                                            0}{' '}
-                                                        buku
+                                                    {book.author && (
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {book.author}
+                                                        </p>
+                                                    )}
+                                                    <p className="mt-auto pt-1 text-sm font-semibold text-primary">
+                                                        {rupiah.format(
+                                                            book.price,
+                                                        )}
                                                     </p>
                                                 </div>
                                             </Link>
@@ -289,6 +361,181 @@ export default function Welcome({
                                 })}
                             </div>
                         </div>
+                    </section>
+                )}
+
+                {/* ---------- Offline store ---------- */}
+                {hasStoreInfo && (
+                    <section
+                        id="toko"
+                        className="scroll-mt-20 border-t border-border/60"
+                    >
+                        <div className="mx-auto max-w-6xl px-4 py-16">
+                            <Reveal variant="scale">
+                                <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-brand/10 p-8 md:p-10">
+                                    <div
+                                        aria-hidden="true"
+                                        className="animate-drift pointer-events-none absolute -top-16 -right-10 size-64 rounded-full bg-sky/20 blur-3xl"
+                                    />
+                                    <div className="relative grid gap-8 md:grid-cols-2">
+                                        <div>
+                                            <span className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">
+                                                <MapPin className="size-3.5" />
+                                                Toko offline
+                                            </span>
+                                            <h2 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground">
+                                                Mampir langsung ke {store.name}
+                                            </h2>
+                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                Pilih buku sambil ngopi, tanya
+                                                rekomendasi, atau ambil pesanan
+                                                online-mu.
+                                            </p>
+
+                                            <dl className="mt-6 space-y-3 text-sm">
+                                                {store.address && (
+                                                    <div className="flex gap-3">
+                                                        <MapPin className="mt-0.5 size-5 shrink-0 text-primary" />
+                                                        <dd className="text-foreground">
+                                                            {store.address}
+                                                        </dd>
+                                                    </div>
+                                                )}
+                                                {store.hours && (
+                                                    <div className="flex gap-3">
+                                                        <Clock className="mt-0.5 size-5 shrink-0 text-primary" />
+                                                        <dd className="text-foreground">
+                                                            {store.hours}
+                                                        </dd>
+                                                    </div>
+                                                )}
+                                                {store.phone && (
+                                                    <div className="flex gap-3">
+                                                        <Phone className="mt-0.5 size-5 shrink-0 text-primary" />
+                                                        <dd className="text-foreground">
+                                                            {store.phone}
+                                                        </dd>
+                                                    </div>
+                                                )}
+                                            </dl>
+
+                                            <div className="mt-6 flex flex-wrap gap-3">
+                                                {waLink && (
+                                                    <Button asChild>
+                                                        <a
+                                                            href={waLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <MessageCircle className="size-4" />
+                                                            Chat WhatsApp
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                                {store.maps_url && (
+                                                    <Button
+                                                        variant="outline"
+                                                        asChild
+                                                    >
+                                                        <a
+                                                            href={store.maps_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <MapPin className="size-4" />
+                                                            Lihat di Maps
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {store.gallery
+                                                .slice(0, 4)
+                                                .map((src) => (
+                                                    <div
+                                                        key={src}
+                                                        className="aspect-square overflow-hidden rounded-xl border border-border/60"
+                                                    >
+                                                        <img
+                                                            src={`/${src}`}
+                                                            alt="Toko Kayana Book"
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            className="size-full object-cover"
+                                                        />
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Reveal>
+                        </div>
+                    </section>
+                )}
+
+                {/* ---------- Gallery ---------- */}
+                {store.gallery.length > 0 && (
+                    <section className="border-t border-border/60 bg-card/40">
+                        <div className="mx-auto max-w-6xl px-4 py-16">
+                            <Reveal className="mb-8">
+                                <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
+                                    Suasana & momen di toko
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Event, transaksi, dan keseharian Kayana Book.
+                                </p>
+                            </Reveal>
+
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                {store.gallery.map((src, i) => (
+                                    <Reveal
+                                        key={src}
+                                        delay={Math.min(i, 9) * 45}
+                                        className="group overflow-hidden rounded-xl border border-border"
+                                    >
+                                        <img
+                                            src={`/${src}`}
+                                            alt="Galeri Kayana Book"
+                                            loading="lazy"
+                                            decoding="async"
+                                            className="aspect-4/3 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        />
+                                    </Reveal>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* ---------- Instagram ---------- */}
+                {igLink && (
+                    <section className="mx-auto max-w-6xl px-4 py-16">
+                        <Reveal variant="scale">
+                            <a
+                                href={igLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-brand via-primary to-sky px-6 py-12 text-center text-white"
+                            >
+                                <Instagram className="size-10" />
+                                <h2 className="font-serif text-2xl font-semibold sm:text-3xl">
+                                    Ikuti keseharian kami di Instagram
+                                </h2>
+                                <p className="text-white/85">
+                                    Update buku baru, kuis, & event toko —
+                                    <span className="font-semibold">
+                                        {' '}
+                                        @{igHandle}
+                                    </span>
+                                </p>
+                                <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-primary transition-transform group-hover:scale-105">
+                                    <Instagram className="size-4" />
+                                    Ikuti @{igHandle}
+                                </span>
+                            </a>
+                        </Reveal>
                     </section>
                 )}
 
@@ -316,38 +563,66 @@ export default function Welcome({
                         ))}
                     </div>
                 </section>
-
-                {/* ---------- CTA ---------- */}
-                <section className="mx-auto max-w-6xl px-4 py-16">
-                    <Reveal variant="scale">
-                        <div className="relative overflow-hidden rounded-2xl border border-border bg-primary/5 px-6 py-14 text-center">
-                            <div
-                                aria-hidden="true"
-                                className="animate-drift pointer-events-none absolute -bottom-20 left-1/2 size-72 -translate-x-1/2 rounded-full bg-brand/15 blur-3xl"
-                            />
-                            <h2 className="relative font-serif text-3xl font-semibold tracking-tight text-foreground">
-                                Siap menemukan buku berikutnya?
-                            </h2>
-                            <p className="relative mx-auto mt-3 max-w-md text-muted-foreground">
-                                Katalog diperbarui setiap kali buku baru masuk.
-                                Yang unik cepat habis.
-                            </p>
-                            <Button size="lg" className="relative mt-6" asChild>
-                                <Link href={CatalogController.index()}>
-                                    Mulai jelajahi
-                                </Link>
-                            </Button>
-                        </div>
-                    </Reveal>
-                </section>
             </main>
 
             <footer className="border-t border-border/60">
-                <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-muted-foreground">
-                    <span className="font-serif text-base font-semibold text-foreground">
-                        Kayana<span className="text-brand">Book</span>
-                    </span>
-                    <p className="mt-1">Toko buku bekas &amp; baru.</p>
+                <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm text-muted-foreground sm:grid-cols-[1fr_auto]">
+                    <div>
+                        <span className="font-serif text-base font-semibold text-foreground">
+                            {store.name.replace(/Book$/, '')}
+                            <span className="text-brand">Book</span>
+                        </span>
+                        <p className="mt-1">{store.tagline}.</p>
+                        {store.address && (
+                            <p className="mt-2 flex items-start gap-2">
+                                <MapPin className="mt-0.5 size-4 shrink-0" />
+                                {store.address}
+                            </p>
+                        )}
+                        {store.hours && (
+                            <p className="mt-1 flex items-center gap-2">
+                                <Clock className="size-4" />
+                                {store.hours}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                        {igLink && (
+                            <Button variant="outline" size="icon" asChild>
+                                <a
+                                    href={igLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Instagram"
+                                >
+                                    <Instagram className="size-4" />
+                                </a>
+                            </Button>
+                        )}
+                        {waLink && (
+                            <Button variant="outline" size="icon" asChild>
+                                <a
+                                    href={waLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="WhatsApp"
+                                >
+                                    <MessageCircle className="size-4" />
+                                </a>
+                            </Button>
+                        )}
+                        {store.email && (
+                            <Button variant="outline" size="icon" asChild>
+                                <a
+                                    href={`mailto:${store.email}`}
+                                    aria-label="Email"
+                                >
+                                    <Mail className="size-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </footer>
         </div>

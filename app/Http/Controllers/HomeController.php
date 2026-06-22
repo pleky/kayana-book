@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Book;
 use App\Models\Category;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,8 +19,17 @@ class HomeController extends Controller
             ->filter(fn (Category $category): bool => $category->books_count > 0)
             ->values();
 
+        $latestBooks = Book::query()
+            ->available()
+            ->with('primaryImage')
+            ->latest()
+            ->limit(5)
+            ->get(['id', 'title', 'slug', 'author', 'price', 'condition', 'created_at']);
+
         return Inertia::render('welcome', [
             'categories' => $categories,
+            'latestBooks' => $latestBooks,
+            'store' => config('store'),
         ]);
     }
 }
