@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -103,4 +104,52 @@ it('refuses to pay an order that is not pending', function () {
     $order->update(['status' => 'paid']);
 
     post(route('admin.orders.pay', $order))->assertStatus(422);
+});
+
+it('filters the admin list by needed action with counts', function () {
+    actingAs(adminUser());
+    [$needsOngkir] = reservedOrder('ship'); // pending ship, shipping_cost 0
+    [$needsShip] = reservedOrder('ship');
+    $needsShip->update(['status' => 'paid']);
+    reservedOrder('pickup'); // noise
+
+    get(route('admin.orders.index', ['action' => 'needs_ongkir']))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('orders.data', fn ($data) => count($data) === 1
+                && $data[0]['id'] === $needsOngkir->id)
+            ->where('actionCounts.needs_ongkir', 1)
+            ->where('actionCounts.needs_ship', 1)
+        );
+
+    get(route('admin.orders.index', ['action' => 'needs_ship']))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('orders.data', fn ($data) => count($data) === 1
+                && $data[0]['id'] === $needsShip->id)
+        );
+});
+
+it('searches the admin list by order id', function () {
+    actingAs(adminUser());
+    [$target] = reservedOrder();
+    reservedOrder();
+
+    get(route('admin.orders.index', ['search' => (string) $target->id]))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('orders.data', fn ($data) => count($data) === 1
+                && $data[0]['id'] === $target->id)
+        );
+});
+
+it('shows order events and book links on the detail page', function () {
+    actingAs(adminUser());
+    [$order] = reservedOrder('ship');
+    $order->events()->create(['type' => 'created', 'description' => 'Pesanan dibuat.']);
+
+    get(route('admin.orders.show', $order))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('admin/orders/show')
+            ->has('events')
+            ->has('proofCount')
+            ->has('order.items.0.book')
+        );
 });

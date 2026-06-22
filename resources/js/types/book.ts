@@ -75,6 +75,7 @@ export type OrderItem = {
     price: number;
     book_id: number | null;
     cover_path?: string | null;
+    book?: { id: number; slug: string } | null;
 };
 
 export type Order = {
@@ -86,6 +87,8 @@ export type Order = {
     customer_name: string;
     customer_phone: string;
     fulfillment: Fulfillment;
+    recipient_name: string | null;
+    recipient_phone: string | null;
     shipping_address: string | null;
     shipping_courier: string | null;
     shipping_service: string | null;

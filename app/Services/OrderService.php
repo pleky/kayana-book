@@ -444,7 +444,7 @@ class OrderService
             ]);
 
             $amount = number_format($shippingCost, 0, ',', '.');
-            $this->recordEvent($order, OrderEventType::OngkirSet, "Ongkir ditetapkan Rp{$amount}.", [
+            $this->recordEvent($order, OrderEventType::OngkirSet, "Biaya ongkir diperbarui oleh penjual menjadi Rp{$amount}.", [
                 'amount' => $shippingCost,
             ]);
         });

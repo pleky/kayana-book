@@ -39,7 +39,11 @@ Tujuan: redesign jadi halaman berbasis **timeline** yang informatif + fitur resi
 - G5: Timeline **pengiriman** (diproses → dikirim+resi → diterima).
 
 **Non-Goals**
-- Redesign halaman admin order (terpisah; cukup dukung data baru + tampil bukti).
+- ~~Redesign halaman admin order~~ → **dikerjakan di follow-up terpisah**: detail
+  admin kini punya timeline status + riwayat (`order_events`) + galeri bukti +
+  info penerima/pembayaran (humanized) + item link ke edit buku; daftar admin
+  dapat search/sort/tanggal + filter "perlu tindakan" (perlu ongkir / perlu
+  dikirim) + counts. Reuse `OrderStatusTimeline`/`OrderEventList`/route `orders.proof`.
 - Chat/komplain, retur/refund.
 - Tracking untuk `pickup` (tak ada pengiriman).
 
