@@ -18,6 +18,7 @@ createInertiaApp({
             case name.startsWith('catalog/'):
             case name.startsWith('cart/'):
             case name.startsWith('checkout/'):
+            case name.startsWith('checkout-link/'):
             case name.startsWith('orders/'):
                 return null;
             case name.startsWith('auth/'):

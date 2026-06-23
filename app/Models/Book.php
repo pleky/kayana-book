@@ -27,6 +27,7 @@ class Book extends Model
         'price',
         'cost_price',
         'status',
+        'is_unlisted',
         'category_id',
         'language',
         'audience',
@@ -41,6 +42,7 @@ class Book extends Model
     {
         return [
             'is_new' => 'boolean',
+            'is_unlisted' => 'boolean',
             'price' => 'integer',
             'cost_price' => 'integer',
             'weight_grams' => 'integer',
@@ -86,6 +88,16 @@ class Book extends Model
     public function scopeAvailable(Builder $query): void
     {
         $query->where('status', 'available');
+    }
+
+    /**
+     * Publicly browsable: available stock and not hidden behind a checkout link.
+     *
+     * @param  Builder<Book>  $query
+     */
+    public function scopeListed(Builder $query): void
+    {
+        $query->where('status', 'available')->where('is_unlisted', false);
     }
 
     /**

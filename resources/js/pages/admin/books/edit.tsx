@@ -1,7 +1,9 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import BookController from '@/actions/App/Http/Controllers/Admin/BookController';
 import BookImageController from '@/actions/App/Http/Controllers/Admin/BookImageController';
 import BookFormFields from '@/components/admin/book-form-fields';
+import UnsavedGuard from '@/components/admin/unsaved-guard';
 import { useConfirm } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -9,6 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { Book, BookCategory } from '@/types';
 
 const STATUSES: { value: string; label: string }[] = [
@@ -16,9 +25,6 @@ const STATUSES: { value: string; label: string }[] = [
     { value: 'reserved', label: 'Dipesan' },
     { value: 'sold', label: 'Terjual' },
 ];
-
-const selectClass =
-    'mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none';
 
 export default function EditBook({
     book,
@@ -28,6 +34,7 @@ export default function EditBook({
     categories: BookCategory[];
 }) {
     const confirm = useConfirm();
+    const [pendingImage, setPendingImage] = useState<number | null>(null);
 
     return (
         <>
@@ -58,6 +65,7 @@ export default function EditBook({
                                             type="button"
                                             variant="ghost"
                                             size="sm"
+                                            disabled={pendingImage === img.id}
                                             className="h-7 px-1 text-xs"
                                             onClick={() =>
                                                 router.patch(
@@ -68,7 +76,17 @@ export default function EditBook({
                                                         },
                                                     ).url,
                                                     {},
-                                                    { preserveScroll: true },
+                                                    {
+                                                        preserveScroll: true,
+                                                        onStart: () =>
+                                                            setPendingImage(
+                                                                img.id,
+                                                            ),
+                                                        onFinish: () =>
+                                                            setPendingImage(
+                                                                null,
+                                                            ),
+                                                    },
                                                 )
                                             }
                                         >
@@ -79,6 +97,7 @@ export default function EditBook({
                                         type="button"
                                         variant="ghost"
                                         size="sm"
+                                        disabled={pendingImage === img.id}
                                         className="h-7 px-1 text-xs text-destructive"
                                         onClick={async () => {
                                             if (
@@ -97,7 +116,17 @@ export default function EditBook({
                                                             image: img.id,
                                                         },
                                                     ).url,
-                                                    { preserveScroll: true },
+                                                    {
+                                                        preserveScroll: true,
+                                                        onStart: () =>
+                                                            setPendingImage(
+                                                                img.id,
+                                                            ),
+                                                        onFinish: () =>
+                                                            setPendingImage(
+                                                                null,
+                                                            ),
+                                                    },
                                                 );
                                             }
                                         }}
@@ -117,25 +146,36 @@ export default function EditBook({
                             options={{ preserveScroll: true }}
                             className="space-y-6"
                         >
-                            {({ processing, errors }) => (
+                            {({ processing, errors, isDirty }) => (
                                 <>
+                                    <UnsavedGuard dirty={isDirty} />
                                     <div>
                                         <Label htmlFor="status">Status</Label>
-                                        <select
-                                            id="status"
+                                        <Select
                                             name="status"
                                             defaultValue={book.status}
-                                            className={selectClass}
                                         >
-                                            {STATUSES.map((s) => (
-                                                <option
-                                                    key={s.value}
-                                                    value={s.value}
-                                                >
-                                                    {s.label}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <SelectTrigger
+                                                id="status"
+                                                className="mt-1 w-full"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {STATUSES.map((s) => (
+                                                    <SelectItem
+                                                        key={s.value}
+                                                        value={s.value}
+                                                    >
+                                                        {s.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Memilih “Terjual” akan mencatat
+                                            tanggal penjualan otomatis.
+                                        </p>
                                         <InputError
                                             className="mt-1"
                                             message={errors.status}

@@ -1,4 +1,4 @@
-export type BookCondition = 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+export type BookCondition = 'like_new' | 'good' | 'fair' | 'poor';
 export type BookStatus = 'available' | 'reserved' | 'sold';
 export type BookLanguage = 'id' | 'en' | 'lainnya';
 export type BookAudience = 'anak' | 'remaja' | 'dewasa' | 'umum';
@@ -40,6 +40,7 @@ export type Book = {
     price: number;
     cost_price: number | null;
     status: BookStatus;
+    is_unlisted: boolean;
     category_id: number | null;
     language: BookLanguage;
     audience: BookAudience;
@@ -80,6 +81,8 @@ export type OrderItem = {
 
 export type Order = {
     id: number;
+    track_token?: string | null;
+    channel?: string;
     status: OrderStatus;
     subtotal: number;
     shipping_cost: number;
@@ -136,6 +139,20 @@ export type OrderEvent = {
         service?: string;
         reason?: string;
     } | null;
+    created_at: string;
+};
+
+export type CheckoutLink = {
+    id: number;
+    label: string | null;
+    token: string;
+    status: 'active' | 'revoked';
+    shipping_mode: 'admin_set' | 'pickup';
+    shipping_cost: number;
+    weight_grams: number | null;
+    expires_at: string | null;
+    books_count?: number;
+    order?: { id: number; status: OrderStatus; track_token: string | null } | null;
     created_at: string;
 };
 

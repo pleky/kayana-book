@@ -73,7 +73,7 @@ class BookSeeder extends Seeder
                 'author' => $author,
                 'isbn' => fake()->optional()->isbn13(),
                 'description' => fake()->optional(0.7)->paragraph(),
-                'condition' => fake()->randomElement(['new', 'like_new', 'good', 'good', 'fair']),
+                'condition' => fake()->randomElement(['like_new', 'good', 'good', 'fair']),
                 'is_new' => fake()->boolean(15),
                 'price' => $price,
                 'cost_price' => (int) round($price * 0.6),

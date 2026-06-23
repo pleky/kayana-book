@@ -20,24 +20,36 @@ class BookController extends Controller
 {
     public function index(Request $request): Response
     {
+        $sort = $request->string('sort')->value();
+        $direction = $request->string('direction')->value() === 'asc' ? 'asc' : 'desc';
+        $sortable = ['title', 'price', 'status', 'created_at'];
+
         $books = Book::query()
-            ->with('primaryImage')
+            ->with(['primaryImage', 'category:id,name'])
             ->when($request->string('search')->trim()->value(), function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('title', 'ilike', "%{$search}%")
-                        ->orWhere('author', 'ilike', "%{$search}%");
+                        ->orWhere('author', 'ilike', "%{$search}%")
+                        ->orWhere('isbn', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->string('status')->trim()->value(), function ($query, string $status): void {
                 $query->where('status', $status);
             })
-            ->latest()
+            ->when($request->string('visibility')->trim()->value(), function ($query, string $visibility): void {
+                $query->where('is_unlisted', $visibility === 'unlisted');
+            })
+            ->when(
+                in_array($sort, $sortable, true),
+                fn ($query) => $query->orderBy($sort, $direction),
+                fn ($query) => $query->latest(),
+            )
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('admin/books/index', [
             'books' => $books,
-            'filters' => $request->only('search', 'status'),
+            'filters' => $request->only('search', 'status', 'visibility', 'sort', 'direction'),
         ]);
     }
 

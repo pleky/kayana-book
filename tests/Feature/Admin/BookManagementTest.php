@@ -133,6 +133,66 @@ it('soft deletes a book', function () {
         ->and(Book::withTrashed()->count())->toBe(1);
 });
 
+it('rejects the retired "new" condition', function () {
+    Storage::fake('public');
+    actingAs(admin());
+
+    post(route('admin.books.store'), [
+        'title' => 'Buku Segel',
+        'price' => 30000,
+        'condition' => 'new',
+        'language' => 'id',
+        'audience' => 'umum',
+        'photos' => [UploadedFile::fake()->image('cover.jpg')],
+    ])->assertSessionHasErrors('condition');
+});
+
+it('filters the list by visibility', function () {
+    actingAs(admin());
+    $listed = Book::factory()->create(['is_unlisted' => false]);
+    $unlisted = Book::factory()->create(['is_unlisted' => true]);
+
+    get(route('admin.books.index', ['visibility' => 'unlisted']))
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('books.data', 1)
+                ->where('books.data.0.id', $unlisted->id),
+        );
+
+    get(route('admin.books.index', ['visibility' => 'listed']))
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('books.data', 1)
+                ->where('books.data.0.id', $listed->id),
+        );
+});
+
+it('searches by isbn', function () {
+    actingAs(admin());
+    $match = Book::factory()->create(['isbn' => '9786020332476']);
+    Book::factory()->create(['isbn' => '1112223334445']);
+
+    get(route('admin.books.index', ['search' => '9786020332476']))
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('books.data', 1)
+                ->where('books.data.0.id', $match->id),
+        );
+});
+
+it('sorts the list by price ascending', function () {
+    actingAs(admin());
+    $cheap = Book::factory()->create(['price' => 10000]);
+    $pricey = Book::factory()->create(['price' => 90000]);
+
+    get(route('admin.books.index', ['sort' => 'price', 'direction' => 'asc']))
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('books.data.0.id', $cheap->id)
+                ->where('books.data.1.id', $pricey->id),
+        );
+});
+
 it('stores the parcel weight in grams', function () {
     Storage::fake('public');
     actingAs(admin());

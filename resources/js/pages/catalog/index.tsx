@@ -25,7 +25,6 @@ import {
 import type { Book, BookCategory, BookCondition, Paginated } from '@/types';
 
 const CONDITION_LABEL: Record<BookCondition, string> = {
-    new: 'Baru',
     like_new: 'Seperti baru',
     good: 'Bagus',
     fair: 'Cukup',

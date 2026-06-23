@@ -40,7 +40,7 @@ class StoreBookRequest extends FormRequest
             'author' => ['nullable', 'string', 'max:255'],
             'isbn' => ['nullable', 'string', 'max:20'],
             'description' => ['nullable', 'string'],
-            'condition' => ['required', Rule::in(['new', 'like_new', 'good', 'fair', 'poor'])],
+            'condition' => ['required', Rule::in(['like_new', 'good', 'fair', 'poor'])],
             'is_new' => ['boolean'],
             'price' => ['required', 'integer', 'min:0'],
             'cost_price' => ['nullable', 'integer', 'min:0'],

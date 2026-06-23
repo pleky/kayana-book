@@ -26,7 +26,7 @@ class BookFactory extends Factory
             'author' => fake()->name(),
             'isbn' => fake()->optional()->isbn13(),
             'description' => fake()->optional()->paragraph(),
-            'condition' => fake()->randomElement(['new', 'like_new', 'good', 'fair', 'poor']),
+            'condition' => fake()->randomElement(['like_new', 'good', 'fair', 'poor']),
             'is_new' => false,
             'price' => fake()->numberBetween(10000, 200000),
             'cost_price' => fake()->optional()->numberBetween(5000, 100000),

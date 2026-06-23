@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import BookController from '@/actions/App/Http/Controllers/Admin/BookController';
 import BookFormFields from '@/components/admin/book-form-fields';
+import UnsavedGuard from '@/components/admin/unsaved-guard';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,8 +29,9 @@ export default function CreateBook({
                             options={{ preserveScroll: true }}
                             className="space-y-6"
                         >
-                            {({ processing, errors }) => (
+                            {({ processing, errors, isDirty }) => (
                                 <>
+                                    <UnsavedGuard dirty={isDirty} />
                                     <BookFormFields
                                         errors={errors}
                                         categories={categories}

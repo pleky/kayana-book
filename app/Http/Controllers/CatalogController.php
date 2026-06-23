@@ -15,7 +15,7 @@ class CatalogController extends Controller
     public function index(Request $request): Response
     {
         $books = Book::query()
-            ->available()
+            ->listed()
             ->with('primaryImage')
             ->when($request->string('search')->trim()->value(), fn (Builder $query, string $search) => $query->search($search))
             ->when($request->string('category')->trim()->value(), function (Builder $query, string $slug): void {
@@ -45,7 +45,7 @@ class CatalogController extends Controller
 
     public function show(Book $book): Response
     {
-        abort_unless($book->status === 'available', 404);
+        abort_unless($book->status === 'available' && ! $book->is_unlisted, 404);
 
         return Inertia::render('catalog/show', [
             'book' => $book->load(['images', 'category', 'tags']),

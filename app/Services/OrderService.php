@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\OrderEventType;
 use App\Exceptions\CartConflictException;
 use App\Models\Book;
+use App\Models\CheckoutLink;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserAddress;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Str;
 
 class OrderService
 {
@@ -186,6 +188,81 @@ class OrderService
             'shipping_etd' => $chosen['etd'],
             'shipping_weight_grams' => $weight,
         ];
+    }
+
+    /**
+     * Create a guest (account-less) order from an admin checkout link. Reserves
+     * each linked book atomically, snapshots price/title/cover, and pins shipping
+     * from the link (admin-set cost + offline address, or pickup). Stamps a
+     * `track_token` so the guest can follow the order without an account.
+     *
+     * @param  array{customer_name: string, customer_phone: string}  $guest
+     *
+     * @throws CartConflictException when a linked book was already taken.
+     */
+    public function createFromLink(CheckoutLink $link, array $guest): Order
+    {
+        abort_unless($link->isOpen(), 404);
+
+        $bookIds = $link->books()->pluck('books.id')->all();
+
+        abort_if($bookIds === [], 422, 'Link tidak memiliki produk.');
+
+        return DB::transaction(function () use ($link, $guest, $bookIds): Order {
+            foreach ($bookIds as $id) {
+                $reserved = Book::where('id', $id)
+                    ->where('status', 'available')
+                    ->update(['status' => 'reserved']);
+
+                if ($reserved === 0) {
+                    $title = Book::whereKey($id)->value('title') ?? "ID {$id}";
+
+                    throw new CartConflictException($title);
+                }
+            }
+
+            /** @var Collection<int, Book> $books */
+            $books = Book::whereIn('id', $bookIds)->with('primaryImage')->get();
+
+            $subtotal = (int) $books->sum('price');
+            $isShip = $link->shipping_mode === 'admin_set';
+            $shippingCost = $isShip ? (int) $link->shipping_cost : 0;
+            $weight = $link->weight_grams ?? $this->parcelWeightGrams($books);
+
+            $order = Order::create([
+                'user_id' => null,
+                'track_token' => Str::random(40),
+                'status' => 'pending',
+                'channel' => 'link',
+                'subtotal' => $subtotal,
+                'shipping_cost' => $shippingCost,
+                'total' => $subtotal + $shippingCost,
+                'customer_name' => $guest['customer_name'],
+                'customer_phone' => $guest['customer_phone'],
+                'fulfillment' => $isShip ? 'ship' : 'pickup',
+                'recipient_name' => $isShip ? $link->recipient_name : null,
+                'recipient_phone' => $isShip ? $link->recipient_phone : null,
+                'shipping_address' => $isShip ? $link->shipping_address : null,
+                'shipping_weight_grams' => $isShip ? $weight : null,
+                'payment_method' => 'transfer',
+                'expires_at' => now()->addHours(self::RESERVE_TTL_HOURS),
+            ]);
+
+            $order->items()->createMany(
+                $books->map(fn (Book $book): array => [
+                    'book_id' => $book->id,
+                    'title' => $book->title,
+                    'cover_path' => $book->primaryImage->first()?->path,
+                    'price' => $book->price,
+                ])->all(),
+            );
+
+            $link->update(['order_id' => $order->id]);
+
+            $this->recordEvent($order, OrderEventType::Created, 'Pesanan dibuat dari link.');
+
+            return $order;
+        });
     }
 
     /**

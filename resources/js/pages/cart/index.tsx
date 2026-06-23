@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import type { BookCondition } from '@/types';
 
 const CONDITION_LABEL: Record<BookCondition, string> = {
-    new: 'Baru',
     like_new: 'Seperti baru',
     good: 'Bagus',
     fair: 'Cukup',

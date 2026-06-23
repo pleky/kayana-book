@@ -1,13 +1,20 @@
 import CategoryCombobox from '@/components/admin/category-combobox';
+import MoneyInput from '@/components/admin/money-input';
 import MultiImageInput from '@/components/admin/multi-image-input';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { Book, BookCategory } from '@/types';
 
 const CONDITIONS: { value: string; label: string }[] = [
-    { value: 'new', label: 'Baru' },
     { value: 'like_new', label: 'Seperti baru' },
     { value: 'good', label: 'Bagus' },
     { value: 'fair', label: 'Cukup' },
@@ -27,10 +34,36 @@ const AUDIENCES: { value: string; label: string }[] = [
     { value: 'dewasa', label: 'Dewasa' },
 ];
 
-const selectClass =
-    'mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none';
-
 type Errors = Partial<Record<string, string>>;
+
+function SelectField({
+    id,
+    name,
+    defaultValue,
+    required = false,
+    options,
+}: {
+    id: string;
+    name: string;
+    defaultValue: string;
+    required?: boolean;
+    options: { value: string; label: string }[];
+}) {
+    return (
+        <Select name={name} defaultValue={defaultValue} required={required}>
+            <SelectTrigger id={id} className="mt-1 w-full">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
 
 export default function BookFormFields({
     errors,
@@ -51,7 +84,7 @@ export default function BookFormFields({
                         id="title"
                         name="title"
                         required
-                        autoFocus
+                        autoFocus={!book}
                         defaultValue={book?.title ?? ''}
                         placeholder="cth. Laskar Pelangi"
                     />
@@ -59,34 +92,26 @@ export default function BookFormFields({
                 </div>
 
                 <div>
-                    <Label htmlFor="price">Harga (Rp) *</Label>
-                    <Input
+                    <Label htmlFor="price">Harga *</Label>
+                    <MoneyInput
                         id="price"
                         name="price"
-                        type="number"
-                        min={0}
                         required
-                        defaultValue={book?.price ?? ''}
-                        placeholder="45000"
+                        defaultValue={book?.price}
+                        placeholder="45.000"
                     />
                     <InputError className="mt-1" message={errors.price} />
                 </div>
 
                 <div>
                     <Label htmlFor="condition">Kondisi *</Label>
-                    <select
+                    <SelectField
                         id="condition"
                         name="condition"
                         required
                         defaultValue={book?.condition ?? 'good'}
-                        className={selectClass}
-                    >
-                        {CONDITIONS.map((c) => (
-                            <option key={c.value} value={c.value}>
-                                {c.label}
-                            </option>
-                        ))}
-                    </select>
+                        options={CONDITIONS}
+                    />
                     <InputError className="mt-1" message={errors.condition} />
                 </div>
             </div>
@@ -97,8 +122,21 @@ export default function BookFormFields({
                 <div className="mt-1">
                     <MultiImageInput max={8} />
                 </div>
-                <InputError className="mt-1" message={errors.photos} />
-                <InputError className="mt-1" message={errors['photos.0']} />
+                <p className="mt-1 text-xs text-muted-foreground">
+                    Maksimal 8 foto, masing-masing ≤ 5 MB (JPG/PNG).
+                </p>
+                {Object.entries(errors)
+                    .filter(
+                        ([key]) =>
+                            key === 'photos' || key.startsWith('photos.'),
+                    )
+                    .map(([key, message]) => (
+                        <InputError
+                            key={key}
+                            className="mt-1"
+                            message={message}
+                        />
+                    ))}
             </div>
 
             {/* Optional details */}
@@ -135,12 +173,10 @@ export default function BookFormFields({
 
                 <div>
                     <Label htmlFor="cost_price">Harga modal (privat)</Label>
-                    <Input
+                    <MoneyInput
                         id="cost_price"
                         name="cost_price"
-                        type="number"
-                        min={0}
-                        defaultValue={book?.cost_price ?? ''}
+                        defaultValue={book?.cost_price}
                         placeholder="opsional"
                     />
                     <InputError className="mt-1" message={errors.cost_price} />
@@ -164,35 +200,23 @@ export default function BookFormFields({
 
                 <div>
                     <Label htmlFor="language">Bahasa</Label>
-                    <select
+                    <SelectField
                         id="language"
                         name="language"
                         defaultValue={book?.language ?? 'id'}
-                        className={selectClass}
-                    >
-                        {LANGUAGES.map((l) => (
-                            <option key={l.value} value={l.value}>
-                                {l.label}
-                            </option>
-                        ))}
-                    </select>
+                        options={LANGUAGES}
+                    />
                     <InputError className="mt-1" message={errors.language} />
                 </div>
 
                 <div>
                     <Label htmlFor="audience">Segmen</Label>
-                    <select
+                    <SelectField
                         id="audience"
                         name="audience"
                         defaultValue={book?.audience ?? 'umum'}
-                        className={selectClass}
-                    >
-                        {AUDIENCES.map((a) => (
-                            <option key={a.value} value={a.value}>
-                                {a.label}
-                            </option>
-                        ))}
-                    </select>
+                        options={AUDIENCES}
+                    />
                     <InputError className="mt-1" message={errors.audience} />
                 </div>
 

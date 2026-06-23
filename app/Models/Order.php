@@ -15,6 +15,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'track_token',
         'status',
         'channel',
         'subtotal',

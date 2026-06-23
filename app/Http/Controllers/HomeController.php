@@ -20,7 +20,7 @@ class HomeController extends Controller
             ->values();
 
         $latestBooks = Book::query()
-            ->available()
+            ->listed()
             ->with('primaryImage')
             ->latest()
             ->limit(5)

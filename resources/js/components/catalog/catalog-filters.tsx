@@ -20,7 +20,6 @@ export type CatalogFiltersValue = {
 };
 
 const CONDITIONS: { value: string; label: string }[] = [
-    { value: 'new', label: 'Baru' },
     { value: 'like_new', label: 'Seperti baru' },
     { value: 'good', label: 'Bagus' },
     { value: 'fair', label: 'Cukup' },

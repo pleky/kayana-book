@@ -49,6 +49,33 @@ class PaymentController extends Controller
     }
 
     /**
+     * Issue a Snap token for a guest (account-less) link order, keyed by its
+     * `track_token`. No reprice — link orders are price-locked at creation and
+     * their books are hidden from the catalog.
+     */
+    public function payGuest(Order $order): JsonResponse
+    {
+        abort_unless($order->channel === 'link', 404);
+        abort_unless($order->status === 'pending', 422, 'Pesanan tidak menunggu pembayaran.');
+
+        if ($order->fulfillment === 'ship' && $order->shipping_cost === 0) {
+            return response()->json(['message' => 'Ongkir belum dikonfirmasi penjual.'], 422);
+        }
+
+        if (! $this->midtrans->configured()) {
+            return response()->json(['message' => 'Gateway belum aktif.'], 422);
+        }
+
+        $token = $this->midtrans->createSnapToken($order);
+
+        if ($token === null) {
+            return response()->json(['message' => 'Tidak bisa memulai pembayaran. Coba lagi.'], 422);
+        }
+
+        return response()->json(['snap_token' => $token]);
+    }
+
+    /**
      * Midtrans server-to-server notification. Verify the signature, then mark
      * the matching order paid on settlement. Always answers 200 so Midtrans
      * stops retrying once we have acknowledged receipt.

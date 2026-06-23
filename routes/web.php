@@ -3,11 +3,14 @@
 use App\Http\Controllers\Admin\BookController as AdminBookController;
 use App\Http\Controllers\Admin\BookImageController as AdminBookImageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\CheckoutLinkController as AdminCheckoutLinkController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CheckoutLinkController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuestOrderController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
@@ -39,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pesanan/{order}/bukti/{index}', [OrderController::class, 'proof'])->name('orders.proof');
 });
 
+// Anonymous checkout via admin-generated link — token-gated, no account.
+Route::get('beli/{checkoutLink}', [CheckoutLinkController::class, 'show'])->name('checkout-link.show');
+Route::post('beli/{checkoutLink}', [CheckoutLinkController::class, 'store'])
+    ->middleware('throttle:10,1')->name('checkout-link.store');
+Route::get('lacak/{order:track_token}', [GuestOrderController::class, 'show'])->name('guest.orders.show');
+Route::post('lacak/{order:track_token}/bayar', [PaymentController::class, 'payGuest'])
+    ->middleware('throttle:10,1')->name('guest.orders.pay');
+
 // Midtrans server-to-server webhook — no auth/CSRF (exempted in bootstrap/app.php).
 Route::post('webhooks/midtrans', [PaymentController::class, 'notify'])->name('payment.notify');
 
@@ -59,6 +70,13 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::post('orders/{order}/ship', [AdminOrderController::class, 'ship'])->name('orders.ship');
         Route::post('orders/{order}/complete', [AdminOrderController::class, 'complete'])->name('orders.complete');
         Route::post('orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
+
+        Route::get('checkout-links', [AdminCheckoutLinkController::class, 'index'])->name('checkout-links.index');
+        Route::get('checkout-links/create', [AdminCheckoutLinkController::class, 'create'])->name('checkout-links.create');
+        Route::post('checkout-links', [AdminCheckoutLinkController::class, 'store'])->name('checkout-links.store');
+        Route::delete('checkout-links/{checkoutLink}', [AdminCheckoutLinkController::class, 'destroy'])->name('checkout-links.destroy');
+        Route::post('checkout-links/{checkoutLink}/revoke', [AdminCheckoutLinkController::class, 'revoke'])->name('checkout-links.revoke');
+        Route::post('checkout-links/{checkoutLink}/regenerate', [AdminCheckoutLinkController::class, 'regenerate'])->name('checkout-links.regenerate');
     });
 
 require __DIR__.'/settings.php';
