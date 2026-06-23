@@ -7,11 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
+
+    /**
+     * Cache key for the shared catalog navigation tree.
+     */
+    public const NAV_CACHE_KEY = 'nav_categories';
 
     protected $fillable = [
         'name',
@@ -19,6 +25,17 @@ class Category extends Model
         'parent_id',
         'sort_order',
     ];
+
+    /**
+     * Bust the cached navigation whenever any category changes.
+     */
+    protected static function booted(): void
+    {
+        $forget = fn () => Cache::forget(self::NAV_CACHE_KEY);
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
 
     /**
      * @return HasMany<Book, $this>
