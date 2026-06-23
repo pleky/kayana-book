@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CheckoutLinkStatus;
 use App\Models\Book;
 use App\Models\CheckoutLink;
 use App\Models\Order;
@@ -138,7 +139,7 @@ it('relists books when admin revokes a link', function () {
 
     post(route('admin.checkout-links.revoke', $link->token))->assertRedirect();
 
-    expect($link->refresh()->status)->toBe('revoked')
+    expect($link->refresh()->status)->toBe(CheckoutLinkStatus::Revoked)
         ->and($book->refresh()->is_unlisted)->toBeFalse();
 });
 

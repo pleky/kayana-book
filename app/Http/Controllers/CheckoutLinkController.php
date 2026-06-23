@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ShippingMode;
 use App\Exceptions\CartConflictException;
 use App\Models\CheckoutLink;
 use App\Services\OrderService;
@@ -24,7 +25,7 @@ class CheckoutLinkController extends Controller
         $checkoutLink->load(['books:id,title,price', 'books.primaryImage']);
 
         $subtotal = (int) $checkoutLink->books->sum('price');
-        $shippingCost = $checkoutLink->shipping_mode === 'admin_set'
+        $shippingCost = $checkoutLink->shipping_mode === ShippingMode::AdminSet
             ? (int) $checkoutLink->shipping_cost
             : 0;
 

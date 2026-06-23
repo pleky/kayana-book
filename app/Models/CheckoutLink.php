@@ -2,10 +2,18 @@
 
 namespace App\Models;
 
+use App\Enums\CheckoutLinkStatus;
+use App\Enums\ShippingMode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property CheckoutLinkStatus $status
+ * @property ShippingMode $shipping_mode
+ * @property Carbon|null $expires_at
+ */
 class CheckoutLink extends Model
 {
     protected $fillable = [
@@ -28,6 +36,8 @@ class CheckoutLink extends Model
     protected function casts(): array
     {
         return [
+            'status' => CheckoutLinkStatus::class,
+            'shipping_mode' => ShippingMode::class,
             'shipping_cost' => 'integer',
             'weight_grams' => 'integer',
             'expires_at' => 'datetime',
@@ -56,7 +66,7 @@ class CheckoutLink extends Model
      */
     public function isOpen(): bool
     {
-        if ($this->status !== 'active') {
+        if ($this->status !== CheckoutLinkStatus::Active) {
             return false;
         }
 

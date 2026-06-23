@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\OrderEventType;
+use App\Enums\ShippingMode;
 use App\Exceptions\CartConflictException;
 use App\Models\Book;
 use App\Models\CheckoutLink;
@@ -225,7 +226,7 @@ class OrderService
             $books = Book::whereIn('id', $bookIds)->with('primaryImage')->get();
 
             $subtotal = (int) $books->sum('price');
-            $isShip = $link->shipping_mode === 'admin_set';
+            $isShip = $link->shipping_mode === ShippingMode::AdminSet;
             $shippingCost = $isShip ? (int) $link->shipping_cost : 0;
             $weight = $link->weight_grams ?? $this->parcelWeightGrams($books);
 
