@@ -522,7 +522,7 @@ class OrderService
     public function addProofs(Order $order, array $newPaths): array
     {
         $paths = array_slice(
-            array_merge($order->received_proof_paths ?? [], array_values($newPaths)),
+            array_merge($order->received_proof_paths ?? [], $newPaths),
             0,
             self::MAX_PROOFS,
         );

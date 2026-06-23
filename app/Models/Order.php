@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property list<string>|null $received_proof_paths
+ */
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */

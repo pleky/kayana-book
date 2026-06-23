@@ -6,6 +6,9 @@ use App\Enums\OrderEventType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed>|null $meta
+ */
 class OrderEvent extends Model
 {
     /** Audit rows are append-only — only a created_at timestamp. */
