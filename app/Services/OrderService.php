@@ -340,10 +340,18 @@ class OrderService
                 $changed = true;
             }
 
-            $order->update([
+            $attributes = [
                 'subtotal' => $subtotal,
                 'total' => $subtotal + $order->shipping_cost,
-            ]);
+            ];
+
+            // Drop any live Snap session: it was issued for the old total, so the
+            // next pay attempt must mint a fresh one rather than reuse a stale token.
+            if ($changed) {
+                $attributes['snap_token'] = null;
+            }
+
+            $order->update($attributes);
 
             if ($changes !== []) {
                 $this->recordRepriced($order, $changes);
@@ -385,28 +393,49 @@ class OrderService
     }
 
     /**
-     * Confirm payment: order paid, its reserved books become sold.
+     * Confirm payment: order paid, its reserved books become sold. Idempotent and
+     * concurrency-safe — the order row is locked and re-checked inside the
+     * transaction, so duplicate gateway webhooks or a double-clicked admin action
+     * transition the order exactly once. Optional $paymentMeta (gateway/channel/
+     * reference) is persisted in the same transaction to avoid partial states.
+     *
+     * @param  array<string, mixed>  $paymentMeta
+     * @return bool whether this call performed the transition
      */
-    public function markPaid(Order $order): void
+    public function markPaid(Order $order, array $paymentMeta = []): bool
     {
-        DB::transaction(function () use ($order): void {
-            Book::whereIn('id', $order->items()->pluck('book_id'))
+        $transitioned = DB::transaction(function () use ($order, $paymentMeta): bool {
+            $locked = Order::whereKey($order->getKey())->lockForUpdate()->first();
+
+            if ($locked === null || $locked->status !== 'pending') {
+                return false;
+            }
+
+            Book::whereIn('id', $locked->items()->pluck('book_id'))
                 ->where('status', 'reserved')
                 ->update(['status' => 'sold', 'sold_at' => now()]);
 
-            $order->update([
+            $locked->update([
+                ...$paymentMeta,
                 'status' => 'paid',
                 'paid_at' => now(),
                 'expires_at' => null,
             ]);
 
-            $channel = $order->payment_channel
-                ? ' ('.self::humanizePaymentChannel($order->payment_channel).')'
+            $channel = $locked->payment_channel
+                ? ' ('.self::humanizePaymentChannel($locked->payment_channel).')'
                 : '';
-            $this->recordEvent($order, OrderEventType::Paid, "Pembayaran diterima{$channel}.");
+            $this->recordEvent($locked, OrderEventType::Paid, "Pembayaran diterima{$channel}.");
+
+            return true;
         });
 
-        $this->notifyAdmins(new OrderPaid($order));
+        if ($transitioned) {
+            $order->refresh();
+            $this->notifyAdmins(new OrderPaid($order));
+        }
+
+        return $transitioned;
     }
 
     /**
@@ -441,17 +470,11 @@ class OrderService
      */
     public function markPaidFromGateway(Order $order, string $channel, string $reference): void
     {
-        if ($order->status !== 'pending') {
-            return;
-        }
-
-        $order->update([
+        $this->markPaid($order, [
             'payment_gateway' => 'midtrans',
             'payment_channel' => $channel,
             'payment_reference' => $reference,
         ]);
-
-        $this->markPaid($order);
     }
 
     /**

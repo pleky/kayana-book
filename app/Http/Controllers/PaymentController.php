@@ -88,7 +88,15 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 403);
         }
 
-        $order = Order::where('payment_reference', $payload['order_id'] ?? null)->first();
+        $reference = (string) ($payload['order_id'] ?? '');
+        $order = Order::where('payment_reference', $reference)->first();
+
+        // Fallback: an earlier Snap session may carry a now-rotated reference.
+        // The signature is already verified, and we mint the order_id ourselves
+        // as `KAYANA-{id}-…`, so resolving by the embedded id is safe.
+        if ($order === null && preg_match('/^KAYANA-(\d+)-/', $reference, $matches)) {
+            $order = Order::find((int) $matches[1]);
+        }
 
         if ($order === null) {
             return response()->json(['message' => 'Order not found.']);

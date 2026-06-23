@@ -38,6 +38,16 @@ class MidtransService
             return null;
         }
 
+        // Reuse the order's live Snap session if one exists. A buyer who reopens
+        // the popup keeps the same Midtrans order_id — otherwise a fresh reference
+        // would overwrite `payment_reference` and orphan the earlier session's
+        // webhook. A repriced order has its `snap_token` cleared upstream, and an
+        // order past its reservation TTL is swept to `cancelled` by the scheduler,
+        // so a `pending` order with a token still has a valid session to reuse.
+        if (filled($order->snap_token) && $order->status === 'pending') {
+            return $order->snap_token;
+        }
+
         $reference = $this->buildReference($order);
 
         try {

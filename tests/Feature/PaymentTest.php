@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\OrderService;
 use Illuminate\Support\Facades\Http;
 
 use function Pest\Laravel\actingAs;
@@ -132,6 +133,78 @@ it('rejects a webhook with an invalid signature', function () {
     postJson(route('payment.notify'), $payload)->assertStatus(403);
 
     expect($order->refresh()->status)->toBe('pending');
+});
+
+it('reuses the live snap session instead of rotating the reference', function () {
+    configureMidtrans();
+    Http::fake([
+        'api.sandbox.midtrans.com/snap/v1/transactions' => Http::response(['token' => 'snap-tok-1']),
+    ]);
+
+    $user = User::factory()->create();
+    $book = Book::factory()->create(['status' => 'reserved', 'price' => 150000]);
+    $order = Order::factory()->for($user)->create([
+        'subtotal' => 150000,
+        'total' => 150000,
+        'shipping_cost' => 0,
+        'fulfillment' => 'pickup',
+    ]);
+    $order->items()->create(['book_id' => $book->id, 'title' => $book->title, 'price' => 150000]);
+
+    actingAs($user)->postJson(route('orders.pay', $order))->assertOk();
+    $firstReference = $order->refresh()->payment_reference;
+
+    actingAs($user)->postJson(route('orders.pay', $order))
+        ->assertOk()
+        ->assertJson(['snap_token' => 'snap-tok-1']);
+
+    expect($order->refresh()->payment_reference)->toBe($firstReference);
+    Http::assertSentCount(1);
+});
+
+it('resolves the webhook by embedded order id when the reference rotated', function () {
+    configureMidtrans();
+
+    $order = Order::factory()->create([
+        'total' => 200000,
+        'payment_reference' => 'KAYANA-'.fake()->randomNumber(),
+    ]);
+    $order->update(['payment_reference' => 'KAYANA-'.$order->id.'-new']);
+    $book = Book::factory()->create(['status' => 'reserved']);
+    $order->items()->create(['book_id' => $book->id, 'title' => $book->title, 'price' => 200000]);
+
+    $staleReference = 'KAYANA-'.$order->id.'-old';
+    $gross = number_format($order->total, 2, '.', '');
+    $signature = hash('sha512',
+        $staleReference.'200'.$gross.config('services.midtrans.server_key'),
+    );
+
+    postJson(route('payment.notify'), [
+        'order_id' => $staleReference,
+        'status_code' => '200',
+        'gross_amount' => $gross,
+        'transaction_status' => 'settlement',
+        'fraud_status' => 'accept',
+        'payment_type' => 'qris',
+        'signature_key' => $signature,
+    ])->assertOk();
+
+    expect($order->refresh()->status)->toBe('paid')
+        ->and($book->refresh()->status)->toBe('sold');
+});
+
+it('transitions to paid exactly once on a double mark-paid', function () {
+    $order = Order::factory()->create(['total' => 50000]);
+    $book = Book::factory()->create(['status' => 'reserved']);
+    $order->items()->create(['book_id' => $book->id, 'title' => $book->title, 'price' => 50000]);
+
+    $orders = app(OrderService::class);
+
+    expect($orders->markPaid($order))->toBeTrue()
+        ->and($orders->markPaid($order))->toBeFalse()
+        ->and($order->refresh()->status)->toBe('paid');
+
+    expect($order->events()->where('type', 'paid')->count())->toBe(1);
 });
 
 it('is idempotent across repeated webhooks', function () {
