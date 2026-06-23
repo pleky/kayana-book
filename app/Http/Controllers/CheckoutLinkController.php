@@ -42,7 +42,7 @@ class CheckoutLinkController extends Controller
                     'id' => $book->id,
                     'title' => $book->title,
                     'price' => $book->price,
-                    'cover_path' => $book->primaryImage->first()?->path,
+                    'cover_path' => $book->primaryImage?->path,
                 ]),
             ],
             'gateway_enabled' => $midtrans->configured(),

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Book extends Model
@@ -75,11 +76,11 @@ class Book extends Model
     }
 
     /**
-     * @return HasMany<BookImage, $this>
+     * @return HasOne<BookImage, $this>
      */
-    public function primaryImage(): HasMany
+    public function primaryImage(): HasOne
     {
-        return $this->images()->where('is_primary', true);
+        return $this->hasOne(BookImage::class)->where('is_primary', true);
     }
 
     /**

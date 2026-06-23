@@ -48,7 +48,7 @@ export type Book = {
     sold_at: string | null;
     created_at: string;
     images?: BookImage[];
-    primary_image?: BookImage[];
+    primary_image?: BookImage | null;
     category?: BookCategory | null;
     tags?: Tag[];
 };

@@ -290,7 +290,7 @@ export default function Welcome({
 
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                                 {latestBooks.map((book, i) => {
-                                    const cover = book.primary_image?.[0];
+                                    const cover = book.primary_image;
 
                                     return (
                                         <Reveal

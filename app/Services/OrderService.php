@@ -124,7 +124,7 @@ class OrderService
                 $books->map(fn (Book $book): array => [
                     'book_id' => $book->id,
                     'title' => $book->title,
-                    'cover_path' => $book->primaryImage->first()?->path,
+                    'cover_path' => $book->primaryImage?->path,
                     'price' => $book->price,
                 ])->all(),
             );
@@ -252,7 +252,7 @@ class OrderService
                 $books->map(fn (Book $book): array => [
                     'book_id' => $book->id,
                     'title' => $book->title,
-                    'cover_path' => $book->primaryImage->first()?->path,
+                    'cover_path' => $book->primaryImage?->path,
                     'price' => $book->price,
                 ])->all(),
             );
@@ -305,7 +305,7 @@ class OrderService
                     continue; // book gone — keep the snapshot
                 }
 
-                $cover = $book->primaryImage->first()?->path;
+                $cover = $book->primaryImage?->path;
                 $priceChanged = (int) $item->price !== (int) $book->price;
                 $titleChanged = $item->title !== $book->title;
 
@@ -380,7 +380,7 @@ class OrderService
                 continue;
             }
 
-            $cover = $book->primaryImage->first()?->path;
+            $cover = $book->primaryImage?->path;
 
             if ($item->price !== (int) $book->price
                 || $item->title !== $book->title

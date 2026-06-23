@@ -24,7 +24,7 @@ class CartController extends Controller
                 'author' => $book->author,
                 'price' => $book->price,
                 'condition' => $book->condition,
-                'cover' => $book->primaryImage->first()?->path,
+                'cover' => $book->primaryImage?->path,
             ])->values(),
             'subtotal' => (int) $books->sum('price'),
         ]);

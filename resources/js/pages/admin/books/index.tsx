@@ -295,7 +295,7 @@ export default function BooksIndex({
                                 </tr>
                             )}
                             {books.data.map((book) => {
-                                const cover = book.primary_image?.[0];
+                                const cover = book.primary_image;
 
                                 return (
                                     <tr
