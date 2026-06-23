@@ -12,26 +12,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
 import type { Order, OrderStatus, Paginated } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu bayar',
-    paid: 'Diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
 
 const SORTS: { value: string; label: string }[] = [
     { value: '', label: 'Terbaru' },
@@ -39,12 +25,6 @@ const SORTS: { value: string; label: string }[] = [
     { value: 'total_desc', label: 'Total tertinggi' },
     { value: 'total_asc', label: 'Total terendah' },
 ];
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('id-ID', {
@@ -78,6 +58,7 @@ function needsAction(order: Order): string | null {
     ) {
         return 'Perlu ongkir';
     }
+
     if (order.status === 'paid' && order.fulfillment === 'ship') {
         return 'Perlu dikirim';
     }
@@ -111,18 +92,22 @@ export default function AdminOrders({
         SORTS.find((s) => s.value === (filters.sort ?? ''))?.label ?? 'Terbaru';
 
     const chips: { key: keyof Filters; label: string }[] = [];
+
     if (filters.search) {
         chips.push({ key: 'search', label: `Cari: "${filters.search}"` });
     }
+
     if (filters.status) {
         chips.push({
             key: 'status',
             label: STATUS_LABEL[filters.status as OrderStatus],
         });
     }
+
     if (filters.date_from) {
         chips.push({ key: 'date_from', label: `Dari ${filters.date_from}` });
     }
+
     if (filters.date_to) {
         chips.push({ key: 'date_to', label: `Sampai ${filters.date_to}` });
     }

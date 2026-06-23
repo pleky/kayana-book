@@ -7,12 +7,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import { rupiah } from '@/lib/format';
 
 type LinkBook = {
     id: number;
@@ -106,23 +101,28 @@ export default function CheckoutLinkShow({ link }: { link: LinkData }) {
                     </dl>
                 </section>
 
-                {link.shipping_mode === 'admin_set' && link.shipping_address && (
-                    <section className="rounded-xl border border-border bg-card p-4 text-sm">
-                        <h2 className="mb-1 font-medium text-foreground">
-                            Dikirim ke
-                        </h2>
-                        {link.recipient_name && <p>{link.recipient_name}</p>}
-                        <p className="whitespace-pre-line text-muted-foreground">
-                            {link.shipping_address}
-                        </p>
-                    </section>
-                )}
+                {link.shipping_mode === 'admin_set' &&
+                    link.shipping_address && (
+                        <section className="rounded-xl border border-border bg-card p-4 text-sm">
+                            <h2 className="mb-1 font-medium text-foreground">
+                                Dikirim ke
+                            </h2>
+                            {link.recipient_name && (
+                                <p>{link.recipient_name}</p>
+                            )}
+                            <p className="whitespace-pre-line text-muted-foreground">
+                                {link.shipping_address}
+                            </p>
+                        </section>
+                    )}
 
                 <form
                     onSubmit={submit}
                     className="space-y-4 rounded-xl border border-border bg-card p-4"
                 >
-                    <h2 className="font-medium text-foreground">Data pembeli</h2>
+                    <h2 className="font-medium text-foreground">
+                        Data pembeli
+                    </h2>
                     <div className="space-y-1">
                         <Label htmlFor="customer_name">Nama</Label>
                         <Input
@@ -149,7 +149,9 @@ export default function CheckoutLinkShow({ link }: { link: LinkData }) {
                         <InputError message={form.errors.customer_phone} />
                     </div>
                     <Button type="submit" disabled={form.processing}>
-                        {form.processing ? 'Memproses…' : 'Lanjut ke pembayaran'}
+                        {form.processing
+                            ? 'Memproses…'
+                            : 'Lanjut ke pembayaran'}
                     </Button>
                 </form>
             </main>

@@ -4,20 +4,9 @@ import CatalogController from '@/actions/App/Http/Controllers/CatalogController'
 import CheckoutController from '@/actions/App/Http/Controllers/CheckoutController';
 import SiteHeader from '@/components/catalog/site-header';
 import { Button } from '@/components/ui/button';
+import { BOOK_CONDITION_LABEL as CONDITION_LABEL } from '@/lib/book-labels';
+import { rupiah } from '@/lib/format';
 import type { BookCondition } from '@/types';
-
-const CONDITION_LABEL: Record<BookCondition, string> = {
-    like_new: 'Seperti baru',
-    good: 'Bagus',
-    fair: 'Cukup',
-    poor: 'Kurang',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 type CartItem = {
     id: number;

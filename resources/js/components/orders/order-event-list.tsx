@@ -13,6 +13,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { rupiah } from '@/lib/format';
 import type { OrderEvent } from '@/types';
 
 async function copyText(text: string): Promise<boolean> {
@@ -81,12 +82,6 @@ const ICON: Record<OrderEvent['type'], LucideIcon> = {
     cancelled: XCircle,
 };
 
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
-
 const fmt = (iso: string) =>
     new Date(iso).toLocaleString('id-ID', {
         day: 'numeric',
@@ -102,7 +97,9 @@ export default function OrderEventList({ events }: { events: OrderEvent[] }) {
 
     return (
         <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="mb-3 font-medium text-foreground">Riwayat pesanan</h2>
+            <h2 className="mb-3 font-medium text-foreground">
+                Riwayat pesanan
+            </h2>
             <ol className="space-y-3 border-l border-border pl-4">
                 {events.map((event) => {
                     const Icon = ICON[event.type] ?? ShoppingBag;

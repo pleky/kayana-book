@@ -7,20 +7,9 @@ import CatalogController from '@/actions/App/Http/Controllers/CatalogController'
 import SiteHeader from '@/components/catalog/site-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Book, BookCondition } from '@/types';
-
-const CONDITION_LABEL: Record<BookCondition, string> = {
-    like_new: 'Seperti baru',
-    good: 'Bagus',
-    fair: 'Cukup',
-    poor: 'Kurang',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import { BOOK_CONDITION_LABEL as CONDITION_LABEL } from '@/lib/book-labels';
+import { rupiah } from '@/lib/format';
+import type { Book } from '@/types';
 
 export default function BookDetail({ book }: { book: Book }) {
     const images = book.images ?? [];
@@ -111,7 +100,9 @@ export default function BookDetail({ book }: { book: Book }) {
                             <div
                                 className="text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:font-medium [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                                 dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(book.description),
+                                    __html: DOMPurify.sanitize(
+                                        book.description,
+                                    ),
                                 }}
                             />
                         )}

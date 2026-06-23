@@ -34,7 +34,9 @@ import SiteHeader from '@/components/catalog/site-header';
 import { Reveal } from '@/components/motion/reveal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Book, BookCategory, BookCondition } from '@/types';
+import { BOOK_CONDITION_LABEL as CONDITION_LABEL } from '@/lib/book-labels';
+import { rupiah } from '@/lib/format';
+import type { Book, BookCategory } from '@/types';
 
 type Store = {
     name: string;
@@ -48,19 +50,6 @@ type Store = {
     maps_url: string;
     gallery: string[];
 };
-
-const CONDITION_LABEL: Record<BookCondition, string> = {
-    like_new: 'Seperti baru',
-    good: 'Bagus',
-    fair: 'Cukup',
-    poor: 'Kurang',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 const TRUST = [
     {
@@ -193,7 +182,7 @@ export default function Welcome({
                     />
                     <div
                         aria-hidden="true"
-                        className="animate-drift pointer-events-none absolute -bottom-24 right-1/3 size-72 rounded-full bg-accent/40 blur-3xl"
+                        className="animate-drift pointer-events-none absolute right-1/3 -bottom-24 size-72 rounded-full bg-accent/40 blur-3xl"
                         style={{ animationDelay: '-12s' }}
                     />
 
@@ -234,9 +223,9 @@ export default function Welcome({
 
                             <Reveal delay={420}>
                                 <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-                                    Telusuri ratusan judul pilihan dengan kondisi
-                                    jujur dan harga ramah — online maupun langsung
-                                    di toko kami.
+                                    Telusuri ratusan judul pilihan dengan
+                                    kondisi jujur dan harga ramah — online
+                                    maupun langsung di toko kami.
                                 </p>
                             </Reveal>
 
@@ -437,7 +426,9 @@ export default function Welcome({
                                                         asChild
                                                     >
                                                         <a
-                                                            href={store.maps_url}
+                                                            href={
+                                                                store.maps_url
+                                                            }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -483,7 +474,8 @@ export default function Welcome({
                                     Suasana & momen di toko
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Event, transaksi, dan keseharian Kayana Book.
+                                    Event, transaksi, dan keseharian Kayana
+                                    Book.
                                 </p>
                             </Reveal>
 

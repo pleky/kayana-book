@@ -10,35 +10,19 @@ import OrderStatusTimeline from '@/components/orders/order-status-timeline';
 import ProofUploader from '@/components/orders/proof-uploader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Order, OrderEvent, OrderStatus } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu pembayaran',
-    paid: 'Sedang diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
+import type { Order, OrderEvent } from '@/types';
 
 type Bank = { bank: string; account_number: string; account_name: string };
-type Payment = { gateway_enabled: boolean; client_key: string; snap_url: string };
+type Payment = {
+    gateway_enabled: boolean;
+    client_key: string;
+    snap_url: string;
+};
 
 type SnapCallbacks = {
     onSuccess?: () => void;
@@ -92,9 +76,11 @@ export default function OrderShow({
         if (!useGateway || order.status !== 'pending') {
             return;
         }
+
         if (document.querySelector('script[data-midtrans]')) {
             return;
         }
+
         const script = document.createElement('script');
         script.src = payment.snap_url;
         script.setAttribute('data-client-key', payment.client_key);
@@ -108,10 +94,12 @@ export default function OrderShow({
 
             return;
         }
+
         let ticks = 0;
         const timer = setInterval(() => {
             ticks += 1;
             router.reload({ only: ['order', 'events'] });
+
             if (ticks >= 20) {
                 clearInterval(timer);
                 setAwaiting(false);
@@ -123,6 +111,7 @@ export default function OrderShow({
 
     const pay = async () => {
         setLoading(true);
+
         try {
             const res = await fetch(PaymentController.pay(order.id).url, {
                 method: 'POST',
@@ -141,6 +130,7 @@ export default function OrderShow({
 
                 return;
             }
+
             if (!res.ok) {
                 throw new Error('pay');
             }
@@ -191,13 +181,13 @@ export default function OrderShow({
 
                         {awaitingOngkir ? (
                             <p className="text-sm text-muted-foreground">
-                                Menunggu penjual mengonfirmasi ongkir. Total final
-                                muncul di sini, lalu kamu bisa membayar.
+                                Menunggu penjual mengonfirmasi ongkir. Total
+                                final muncul di sini, lalu kamu bisa membayar.
                             </p>
                         ) : awaiting ? (
                             <p className="text-sm text-muted-foreground">
-                                Menunggu konfirmasi pembayaran… halaman diperbarui
-                                otomatis.
+                                Menunggu konfirmasi pembayaran… halaman
+                                diperbarui otomatis.
                             </p>
                         ) : useGateway ? (
                             <>
@@ -270,8 +260,9 @@ export default function OrderShow({
                                     })
                                 ) {
                                     router.post(
-                                        OrderController.confirmReceived(order.id)
-                                            .url,
+                                        OrderController.confirmReceived(
+                                            order.id,
+                                        ).url,
                                         {},
                                         { preserveScroll: true },
                                     );

@@ -6,12 +6,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import { rupiah } from '@/lib/format';
 
 type PickBook = { id: number; title: string; price: number };
 
@@ -182,7 +177,9 @@ export default function CheckoutLinkCreate({ books }: { books: PickBook[] }) {
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="recipient_phone">No. penerima</Label>
+                            <Label htmlFor="recipient_phone">
+                                No. penerima
+                            </Label>
                             <Input
                                 id="recipient_phone"
                                 value={form.data.recipient_phone}

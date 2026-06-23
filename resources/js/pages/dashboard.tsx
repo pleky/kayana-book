@@ -12,33 +12,13 @@ import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderCont
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
 import { dashboard } from '@/routes';
-import type { Order, OrderStatus } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu bayar',
-    paid: 'Diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import type { Order } from '@/types';
 
 type Metrics = {
     revenue_today: number;

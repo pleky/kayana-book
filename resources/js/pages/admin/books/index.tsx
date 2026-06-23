@@ -19,33 +19,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import type { Book, BookCondition, BookStatus, Paginated } from '@/types';
-
-const STATUS_LABEL: Record<BookStatus, string> = {
-    available: 'Tersedia',
-    reserved: 'Dipesan',
-    sold: 'Terjual',
-};
-
-const STATUS_VARIANT: Record<BookStatus, 'default' | 'secondary' | 'outline'> =
-    {
-        available: 'default',
-        reserved: 'secondary',
-        sold: 'outline',
-    };
-
-const CONDITION_LABEL: Record<BookCondition, string> = {
-    like_new: 'Seperti baru',
-    good: 'Bagus',
-    fair: 'Cukup',
-    poor: 'Kurang',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import {
+    BOOK_CONDITION_LABEL as CONDITION_LABEL,
+    BOOK_STATUS_LABEL as STATUS_LABEL,
+    BOOK_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/book-labels';
+import { rupiah } from '@/lib/format';
+import type { Book, BookStatus, Paginated } from '@/types';
 
 const tanggal = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' });
 

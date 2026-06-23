@@ -6,32 +6,12 @@ import OrderEventList from '@/components/orders/order-event-list';
 import OrderStatusTimeline from '@/components/orders/order-status-timeline';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Order, OrderEvent, OrderStatus } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu pembayaran',
-    paid: 'Sedang diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
+import type { Order, OrderEvent } from '@/types';
 
 type Payment = {
     gateway_enabled: boolean;
@@ -81,9 +61,11 @@ export default function OrderTrack({
         if (!useGateway || order.status !== 'pending') {
             return;
         }
+
         if (document.querySelector('script[data-midtrans]')) {
             return;
         }
+
         const script = document.createElement('script');
         script.src = payment.snap_url;
         script.setAttribute('data-client-key', payment.client_key);
@@ -97,10 +79,12 @@ export default function OrderTrack({
 
             return;
         }
+
         let ticks = 0;
         const timer = setInterval(() => {
             ticks += 1;
             router.reload({ only: ['order', 'events'] });
+
             if (ticks >= 20) {
                 clearInterval(timer);
                 setAwaiting(false);
@@ -112,6 +96,7 @@ export default function OrderTrack({
 
     const pay = async () => {
         setLoading(true);
+
         try {
             const res = await fetch(PaymentController.payGuest(token).url, {
                 method: 'POST',
@@ -174,8 +159,8 @@ export default function OrderTrack({
                             </p>
                         ) : awaiting ? (
                             <p className="text-sm text-muted-foreground">
-                                Menunggu konfirmasi pembayaran… halaman diperbarui
-                                otomatis.
+                                Menunggu konfirmasi pembayaran… halaman
+                                diperbarui otomatis.
                             </p>
                         ) : useGateway ? (
                             <>

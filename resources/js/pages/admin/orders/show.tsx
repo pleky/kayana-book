@@ -15,26 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Order, OrderEvent, OrderStatus } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu bayar',
-    paid: 'Diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
+import type { Order, OrderEvent } from '@/types';
 
 const PAYMENT_LABEL: Record<string, string> = {
     qris: 'QRIS',
@@ -58,12 +44,6 @@ const humanize = (code: string | null) =>
         ? (PAYMENT_LABEL[code] ??
           code.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
         : '—';
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 const fmt = (iso: string | null) =>
     iso
@@ -113,9 +93,11 @@ export default function AdminOrderShow({
 
     const copyResi = async () => {
         const resi = order.shipping_tracking_number;
+
         if (!resi) {
             return;
         }
+
         try {
             await navigator.clipboard.writeText(resi);
             setCopied(true);
@@ -195,7 +177,9 @@ export default function AdminOrderShow({
                                 <dd>{rupiah.format(order.subtotal)}</dd>
                             </div>
                             <div className="flex justify-between">
-                                <dt className="text-muted-foreground">Ongkir</dt>
+                                <dt className="text-muted-foreground">
+                                    Ongkir
+                                </dt>
                                 <dd>{rupiah.format(order.shipping_cost)}</dd>
                             </div>
                             <div className="flex justify-between border-t pt-1 font-semibold">
@@ -307,7 +291,9 @@ export default function AdminOrderShow({
                         {order.status === 'paid' &&
                             order.fulfillment === 'ship' && (
                                 <Form
-                                    {...AdminOrderController.ship.form(order.id)}
+                                    {...AdminOrderController.ship.form(
+                                        order.id,
+                                    )}
                                     options={{ preserveScroll: true }}
                                     className="flex items-end gap-2"
                                 >
@@ -433,7 +419,8 @@ export default function AdminOrderShow({
                                 variant="destructive"
                                 onClick={() =>
                                     confirmPost(
-                                        AdminOrderController.cancel(order.id).url,
+                                        AdminOrderController.cancel(order.id)
+                                            .url,
                                         'Batalkan pesanan ini? Buku yang masih reserved akan dilepas.',
                                     )
                                 }

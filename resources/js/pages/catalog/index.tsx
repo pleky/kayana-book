@@ -2,9 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Check, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
-import CatalogFilters, {
-    type CatalogFiltersValue,
-} from '@/components/catalog/catalog-filters';
+import CatalogFilters from '@/components/catalog/catalog-filters';
+import type {CatalogFiltersValue} from '@/components/catalog/catalog-filters';
 import SiteHeader from '@/components/catalog/site-header';
 import { Reveal } from '@/components/motion/reveal';
 import { Badge } from '@/components/ui/badge';
@@ -22,14 +21,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { BOOK_CONDITION_LABEL as CONDITION_LABEL } from '@/lib/book-labels';
+import { rupiah } from '@/lib/format';
 import type { Book, BookCategory, BookCondition, Paginated } from '@/types';
-
-const CONDITION_LABEL: Record<BookCondition, string> = {
-    like_new: 'Seperti baru',
-    good: 'Bagus',
-    fair: 'Cukup',
-    poor: 'Kurang',
-};
 
 const LANG_LABEL: Record<string, string> = {
     id: 'Indonesia',
@@ -49,12 +43,6 @@ const SORTS: { value: string; label: string }[] = [
     { value: 'price_asc', label: 'Termurah' },
     { value: 'price_desc', label: 'Termahal' },
 ];
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 function clean(params: CatalogFiltersValue): Record<string, string> {
     return Object.fromEntries(
@@ -83,44 +71,53 @@ export default function Catalog({
         );
     };
 
-    const nameBySlug = (list: { slug?: string; name: string }[], slug?: string) =>
-        list.find((c) => c.slug === slug)?.name ?? slug;
+    const nameBySlug = (
+        list: { slug?: string; name: string }[],
+        slug?: string,
+    ) => list.find((c) => c.slug === slug)?.name ?? slug;
 
     // Active filter chips (sort & search excluded — they live in the toolbar).
     const chips: { key: keyof CatalogFiltersValue; label: string }[] = [];
+
     if (filters.search) {
         chips.push({ key: 'search', label: `Cari: "${filters.search}"` });
     }
+
     if (filters.category) {
         chips.push({
             key: 'category',
             label: `Kategori: ${nameBySlug(categories, filters.category)}`,
         });
     }
+
     if (filters.condition) {
         chips.push({
             key: 'condition',
             label: `Kondisi: ${CONDITION_LABEL[filters.condition as BookCondition]}`,
         });
     }
+
     if (filters.language) {
         chips.push({
             key: 'language',
             label: `Bahasa: ${LANG_LABEL[filters.language] ?? filters.language}`,
         });
     }
+
     if (filters.audience) {
         chips.push({
             key: 'audience',
             label: `Segmen: ${AUDIENCE_LABEL[filters.audience] ?? filters.audience}`,
         });
     }
+
     if (filters.min_price) {
         chips.push({
             key: 'min_price',
             label: `≥ ${rupiah.format(Number(filters.min_price))}`,
         });
     }
+
     if (filters.max_price) {
         chips.push({
             key: 'max_price',

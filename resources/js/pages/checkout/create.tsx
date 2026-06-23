@@ -1,5 +1,6 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { type ReactNode, useEffect, useState } from 'react';
+import {  useEffect, useState } from 'react';
+import type {ReactNode} from 'react';
 import CheckoutController from '@/actions/App/Http/Controllers/CheckoutController';
 import SiteHeader from '@/components/catalog/site-header';
 import InputError from '@/components/input-error';
@@ -14,15 +15,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { rupiah } from '@/lib/format';
 import { edit as editAddresses } from '@/routes/addresses';
 import { quote as quoteRoute } from '@/routes/checkout';
 import type { Auth, UserAddress } from '@/types';
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 type CheckoutItem = { id: number; title: string; price: number };
 

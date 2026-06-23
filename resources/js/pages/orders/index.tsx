@@ -10,7 +10,8 @@ import {
     Truck,
     X,
 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import {  useState } from 'react';
+import type {ReactNode} from 'react';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import SiteHeader from '@/components/catalog/site-header';
 import { Badge } from '@/components/ui/badge';
@@ -22,26 +23,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { rupiah } from '@/lib/format';
+import {
+    ORDER_STATUS_LABEL as STATUS_LABEL,
+    ORDER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/lib/order-status';
 import type { Order, OrderStatus, Paginated } from '@/types';
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-    pending: 'Menunggu bayar',
-    paid: 'Diproses',
-    shipped: 'Dikirim',
-    completed: 'Selesai',
-    cancelled: 'Dibatalkan',
-};
-
-const STATUS_VARIANT: Record<
-    OrderStatus,
-    'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-    pending: 'secondary',
-    paid: 'default',
-    shipped: 'default',
-    completed: 'outline',
-    cancelled: 'destructive',
-};
 
 const SORTS: { value: string; label: string }[] = [
     { value: '', label: 'Terbaru' },
@@ -49,12 +36,6 @@ const SORTS: { value: string; label: string }[] = [
     { value: 'total_desc', label: 'Total tertinggi' },
     { value: 'total_asc', label: 'Total terendah' },
 ];
-
-const rupiah = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-});
 
 const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('id-ID', {
@@ -94,7 +75,9 @@ export default function Orders({
         if (!term) {
             return text;
         }
+
         const idx = text.toLowerCase().indexOf(term);
+
         if (idx < 0) {
             return text;
         }
@@ -111,11 +94,15 @@ export default function Orders({
     };
 
     const apply = (next: Filters) => {
-        router.get(OrderController.index().url, clean({ ...filters, ...next }), {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-        });
+        router.get(
+            OrderController.index().url,
+            clean({ ...filters, ...next }),
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            },
+        );
     };
 
     const statusLabel = filters.status
@@ -125,18 +112,22 @@ export default function Orders({
         SORTS.find((s) => s.value === (filters.sort ?? ''))?.label ?? 'Terbaru';
 
     const chips: { key: keyof Filters; label: string }[] = [];
+
     if (filters.search) {
         chips.push({ key: 'search', label: `Cari: "${filters.search}"` });
     }
+
     if (filters.status) {
         chips.push({
             key: 'status',
             label: STATUS_LABEL[filters.status as OrderStatus],
         });
     }
+
     if (filters.date_from) {
         chips.push({ key: 'date_from', label: `Dari ${filters.date_from}` });
     }
+
     if (filters.date_to) {
         chips.push({ key: 'date_to', label: `Sampai ${filters.date_to}` });
     }
@@ -218,7 +209,9 @@ export default function Orders({
                                     <DropdownMenuItem
                                         key={s.value || 'latest'}
                                         onClick={() =>
-                                            apply({ sort: s.value || undefined })
+                                            apply({
+                                                sort: s.value || undefined,
+                                            })
                                         }
                                     >
                                         {s.label}
@@ -235,7 +228,9 @@ export default function Orders({
                             type="date"
                             value={filters.date_from ?? ''}
                             onChange={(e) =>
-                                apply({ date_from: e.target.value || undefined })
+                                apply({
+                                    date_from: e.target.value || undefined,
+                                })
                             }
                             className="h-9 w-40"
                             aria-label="Tanggal dari"
@@ -259,7 +254,9 @@ export default function Orders({
                                 <button
                                     key={chip.key}
                                     type="button"
-                                    onClick={() => apply({ [chip.key]: undefined })}
+                                    onClick={() =>
+                                        apply({ [chip.key]: undefined })
+                                    }
                                     className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-accent/50"
                                 >
                                     {chip.label}
@@ -272,7 +269,9 @@ export default function Orders({
                                 asChild
                                 className="h-7"
                             >
-                                <Link href={OrderController.index()}>Reset</Link>
+                                <Link href={OrderController.index()}>
+                                    Reset
+                                </Link>
                             </Button>
                         </div>
                     )}
@@ -327,11 +326,13 @@ export default function Orders({
                                                 </span>
                                                 <span className="inline-flex items-center gap-1">
                                                     <Package className="size-3.5" />
-                                                    {order.items_count ?? 0} buku
+                                                    {order.items_count ?? 0}{' '}
+                                                    buku
                                                 </span>
                                                 <span className="inline-flex items-center gap-1">
                                                     <Truck className="size-3.5" />
-                                                    {order.fulfillment === 'ship'
+                                                    {order.fulfillment ===
+                                                    'ship'
                                                         ? 'Kirim'
                                                         : 'Ambil di toko'}
                                                 </span>
@@ -361,9 +362,11 @@ export default function Orders({
 
                                     {(() => {
                                         const items = order.items ?? [];
+
                                         if (items.length === 0) {
                                             return null;
                                         }
+
                                         const sorted = term
                                             ? [...items].sort(
                                                   (a, b) =>
@@ -380,7 +383,8 @@ export default function Orders({
                                               )
                                             : items;
                                         const shown = sorted.slice(0, 3);
-                                        const rest = items.length - shown.length;
+                                        const rest =
+                                            items.length - shown.length;
 
                                         return (
                                             <ul className="mt-3 space-y-1.5 border-t border-border/60 pt-3">

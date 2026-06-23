@@ -18,13 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useFlashToasts } from '@/hooks/use-flash-toasts';
 import { dashboard, login } from '@/routes';
-import type { Auth, BookCategory } from '@/types';
-
-type SharedProps = {
-    auth: Auth;
-    cartCount: number;
-    navCategories: BookCategory[];
-};
+import type { SharedProps } from '@/types/global';
 
 export default function SiteHeader() {
     const { auth, cartCount, navCategories } = usePage<SharedProps>().props;
@@ -142,7 +136,10 @@ export default function SiteHeader() {
                         asChild
                         className="relative"
                     >
-                        <Link href={CartController.index()} aria-label="Keranjang">
+                        <Link
+                            href={CartController.index()}
+                            aria-label="Keranjang"
+                        >
                             <ShoppingCart />
                             {cartCount > 0 && (
                                 <Badge className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs">
