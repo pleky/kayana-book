@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use App\Models\Category;
 use App\Services\CartService;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
@@ -61,19 +60,22 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * The catalog navigation tree, cached until any category changes
-     * (busted by {@see Category::booted()}).
+     * The catalog navigation tree as plain arrays, cached until any category
+     * changes (busted by {@see Category::booted()}). Caching arrays — not the
+     * Eloquent collection — keeps the serialized payload stable across the
+     * database cache store.
      *
-     * @return Collection<int, Category>
+     * @return array<int, array<string, mixed>>
      */
-    private function navCategories(): Collection
+    private function navCategories(): array
     {
         return Cache::remember(
             Category::NAV_CACHE_KEY,
             now()->addHours(6),
-            fn () => Category::orderBy('sort_order')
+            fn (): array => Category::orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name', 'slug', 'parent_id']),
+                ->get(['id', 'name', 'slug', 'parent_id'])
+                ->toArray(),
         );
     }
 }
