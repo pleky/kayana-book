@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelOrderRequest;
+use App\Http\Requests\Admin\ShipOrderRequest;
+use App\Http\Requests\Admin\UpdateOrderShippingRequest;
 use App\Models\Order;
 use App\Services\OrderService;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -89,11 +92,9 @@ class OrderController extends Controller
         ]);
     }
 
-    public function update(Request $request, Order $order): RedirectResponse
+    public function update(UpdateOrderShippingRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validate([
-            'shipping_cost' => ['required', 'integer', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         abort_unless($order->status === 'pending', 422, 'Ongkir hanya bisa diubah saat pesanan masih pending.');
 
@@ -111,11 +112,9 @@ class OrderController extends Controller
         return back()->with('success', 'Pesanan ditandai lunas.');
     }
 
-    public function ship(Request $request, Order $order): RedirectResponse
+    public function ship(ShipOrderRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validate([
-            'tracking_number' => ['nullable', 'string', 'max:50'],
-        ]);
+        $validated = $request->validated();
 
         abort_unless($order->status === 'paid', 422, 'Hanya pesanan lunas yang bisa ditandai dikirim.');
 
@@ -133,11 +132,9 @@ class OrderController extends Controller
         return back()->with('success', 'Pesanan diselesaikan.');
     }
 
-    public function cancel(Request $request, Order $order): RedirectResponse
+    public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validate([
-            'cancel_reason' => ['nullable', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         abort_if(in_array($order->status, ['completed', 'cancelled'], true), 422, 'Pesanan ini tidak bisa dibatalkan.');
 

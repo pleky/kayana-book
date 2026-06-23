@@ -7,6 +7,7 @@ use App\Services\OrderService;
 use App\Services\Payment\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
@@ -19,7 +20,7 @@ class PaymentController extends Controller
      */
     public function pay(Request $request, Order $order, OrderService $orders): JsonResponse
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        Gate::authorize('pay', $order);
         abort_unless($order->status === 'pending', 422, 'Pesanan tidak menunggu pembayaran.');
 
         // Charge the latest book prices; if they shifted, make the buyer review

@@ -8,6 +8,7 @@ use App\Services\Payment\MidtransService;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,7 +74,7 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order, MidtransService $midtrans, OrderService $orders): Response
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        Gate::authorize('view', $order);
 
         // Keep a still-unpaid order in step with the latest book prices/details.
         if ($orders->syncPendingFromBooks($order)) {
@@ -106,7 +107,7 @@ class OrderController extends Controller
      */
     public function confirmReceived(Request $request, Order $order, OrderService $orders): RedirectResponse
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        Gate::authorize('confirmReceived', $order);
         abort_unless($order->fulfillment === 'ship' && $order->status === 'shipped', 422, 'Pesanan belum dikirim.');
 
         $orders->confirmReceived($order);
@@ -120,7 +121,7 @@ class OrderController extends Controller
      */
     public function uploadProofs(Request $request, Order $order, OrderService $orders): RedirectResponse
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        Gate::authorize('uploadProof', $order);
         abort_unless($order->fulfillment === 'ship' && in_array($order->status, ['shipped', 'completed'], true), 422, 'Pesanan belum dikirim.');
 
         $remaining = OrderService::MAX_PROOFS - count($order->received_proof_paths ?? []);
@@ -145,10 +146,7 @@ class OrderController extends Controller
      */
     public function proof(Request $request, Order $order, int $index): StreamedResponse
     {
-        abort_unless(
-            $order->user_id === $request->user()->id || $request->user()->can('admin'),
-            403,
-        );
+        Gate::authorize('viewProof', $order);
 
         $path = ($order->received_proof_paths ?? [])[$index] ?? null;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
