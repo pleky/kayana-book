@@ -86,3 +86,22 @@ it('releases expired orders via the scheduled command', function () {
     expect($order->refresh()->status)->toBe('cancelled')
         ->and($book->refresh()->status)->toBe('available');
 });
+
+it('auto-completes only shipped orders past the grace window', function () {
+    $stale = Order::factory()->create([
+        'status' => 'shipped',
+        'fulfillment' => 'ship',
+        'shipped_at' => now()->subDays(OrderService::AUTO_COMPLETE_DAYS + 1),
+    ]);
+    $recent = Order::factory()->create([
+        'status' => 'shipped',
+        'fulfillment' => 'ship',
+        'shipped_at' => now()->subDay(),
+    ]);
+
+    $completed = app(OrderService::class)->autoCompleteShipped();
+
+    expect($completed)->toBe(1)
+        ->and($stale->refresh()->status)->toBe('completed')
+        ->and($recent->refresh()->status)->toBe('shipped');
+});

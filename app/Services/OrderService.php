@@ -583,16 +583,19 @@ class OrderService
      */
     public function releaseExpired(): int
     {
-        $expired = Order::where('status', 'pending')
+        $count = 0;
+
+        Order::where('status', 'pending')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<', now())
-            ->get();
+            ->chunkById(100, function (Collection $orders) use (&$count): void {
+                foreach ($orders as $order) {
+                    $this->cancel($order, 'expired');
+                    $count++;
+                }
+            });
 
-        foreach ($expired as $order) {
-            $this->cancel($order, 'expired');
-        }
-
-        return $expired->count();
+        return $count;
     }
 
     /**
@@ -601,16 +604,19 @@ class OrderService
      */
     public function autoCompleteShipped(): int
     {
-        $stale = Order::where('status', 'shipped')
+        $count = 0;
+
+        Order::where('status', 'shipped')
             ->whereNotNull('shipped_at')
             ->where('shipped_at', '<', now()->subDays(self::AUTO_COMPLETE_DAYS))
-            ->get();
+            ->chunkById(100, function (Collection $orders) use (&$count): void {
+                foreach ($orders as $order) {
+                    $this->complete($order);
+                    $count++;
+                }
+            });
 
-        foreach ($stale as $order) {
-            $this->complete($order);
-        }
-
-        return $stale->count();
+        return $count;
     }
 
     /**
