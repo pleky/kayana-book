@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { ConfirmProvider } from '@/components/confirm-dialog';
+import { SmoothScroll } from '@/components/smooth-scroll';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -33,6 +34,7 @@ createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
+                <SmoothScroll />
                 <ConfirmProvider>{app}</ConfirmProvider>
                 <Toaster />
             </TooltipProvider>

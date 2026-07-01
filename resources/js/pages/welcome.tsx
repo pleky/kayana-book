@@ -1,32 +1,14 @@
 import { Head, Link } from '@inertiajs/react';
 import {
-    Atom,
-    Baby,
-    BookHeart,
     BookOpen,
-    BookText,
-    Brain,
-    Briefcase,
-    Camera,
     Clock,
-    GraduationCap,
     Instagram,
-    Landmark,
-    Languages,
     Mail,
     MapPin,
     MessageCircle,
+    MouseIcon,
     Phone,
-    Rocket,
-    ScrollText,
-    Search,
-    ShieldCheck,
-    Sparkles,
-    Sprout,
-    UserRound,
-    Wallet,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
@@ -36,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BOOK_CONDITION_LABEL as CONDITION_LABEL } from '@/lib/book-labels';
 import { rupiah } from '@/lib/format';
-import type { Book, BookCategory } from '@/types';
+import type { Book } from '@/types';
 
 type Store = {
     name: string;
@@ -51,30 +33,6 @@ type Store = {
     gallery: string[];
 };
 
-const TRUST = [
-    {
-        icon: Camera,
-        title: 'Foto kondisi asli',
-        body: 'Setiap buku difoto apa adanya — kamu tahu persis kondisi sebelum beli.',
-    },
-    {
-        icon: ShieldCheck,
-        title: 'Stok unik, anti rebutan',
-        body: 'Tiap buku satu eksemplar. Begitu masuk keranjang & checkout, ia jadi milikmu.',
-    },
-    {
-        icon: Wallet,
-        title: 'Bayar gampang',
-        body: 'Checkout, bayar via gateway atau transfer, pesanan langsung tercatat rapi.',
-    },
-];
-
-const CHIP = [
-    'bg-brand/15 text-brand',
-    'bg-sky/15 text-sky',
-    'bg-primary/10 text-primary',
-];
-
 const MOTIF = [
     'aspect-3/4 bg-primary/15',
     'mt-8 aspect-3/4 bg-brand/25',
@@ -84,30 +42,10 @@ const MOTIF = [
     'mt-10 aspect-3/4 bg-primary/15',
 ];
 
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-    novel: BookText,
-    sastra: ScrollText,
-    'fantasi-sci-fi': Rocket,
-    'misteri-thriller': Search,
-    'komik-manga': Sparkles,
-    biografi: UserRound,
-    sejarah: Landmark,
-    'pengembangan-diri': Sprout,
-    'bisnis-ekonomi': Briefcase,
-    'agama-religi': BookHeart,
-    'sains-teknologi': Atom,
-    'psikologi-filsafat': Brain,
-    'buku-pelajaran-kuliah': GraduationCap,
-    'kamus-bahasa': Languages,
-    'buku-anak': Baby,
-};
-
 export default function Welcome({
-    categories,
     latestBooks,
     store,
 }: {
-    categories: BookCategory[];
     latestBooks: Book[];
     store: Store;
 }) {
@@ -170,32 +108,22 @@ export default function Welcome({
 
             <main>
                 {/* ---------- Hero ---------- */}
-                <section className="relative overflow-hidden">
+                <section className="relative flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-gradient-to-br from-secondary via-background to-accent/60">
                     <div
                         aria-hidden="true"
                         className="animate-drift pointer-events-none absolute -top-24 -right-24 size-[28rem] rounded-full bg-brand/25 blur-3xl"
                     />
-                    <div
-                        aria-hidden="true"
-                        className="animate-drift pointer-events-none absolute top-40 -left-32 size-80 rounded-full bg-sky/25 blur-3xl"
-                        style={{ animationDelay: '-6s' }}
-                    />
-                    <div
-                        aria-hidden="true"
-                        className="animate-drift pointer-events-none absolute right-1/3 -bottom-24 size-72 rounded-full bg-accent/40 blur-3xl"
-                        style={{ animationDelay: '-12s' }}
-                    />
 
-                    <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1.1fr_1fr] md:py-24">
+                    <div className="mx-auto grid w-full max-w-6xl flex-1 content-center items-center gap-10 px-4 py-16 md:grid-cols-[1.1fr_1fr] md:py-24">
                         <div className="space-y-6">
                             <Reveal delay={50}>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-                                    <BookOpen className="size-3.5 text-brand" />
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
+                                    <BookOpen className="size-3.5 text-accent-foreground" />
                                     {store.tagline}
                                 </span>
                             </Reveal>
 
-                            <h1 className="font-serif text-4xl leading-[1.05] font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+                            <h1 className="font-serif text-4xl leading-[1.05] font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
                                 <span className="line-reveal block overflow-hidden pb-1">
                                     <span
                                         style={
@@ -204,12 +132,15 @@ export default function Welcome({
                                             } as CSSProperties
                                         }
                                     >
-                                        Buku bercerita,
+                                        Buku{' '}
+                                        <em className="text-accent-foreground italic">
+                                            bercerita
+                                        </em>
+                                        ,
                                     </span>
                                 </span>
                                 <span className="line-reveal block overflow-hidden pb-1">
                                     <span
-                                        className="bg-gradient-to-r from-brand via-primary to-sky bg-clip-text text-transparent"
                                         style={
                                             {
                                                 '--line-delay': '260ms',
@@ -266,11 +197,22 @@ export default function Welcome({
                             </div>
                         </div>
                     </div>
+
+                    <a
+                        href="#baru"
+                        aria-label="Gulir ke koleksi buku"
+                        className="relative z-10 flex flex-col items-center gap-1 self-center pb-8 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                        <MouseIcon className="animate-scroll-hint size-8" />
+                    </a>
                 </section>
 
                 {/* ---------- Latest books ---------- */}
                 {latestBooks.length > 0 && (
-                    <section className="border-t border-border/60">
+                    <section
+                        id="baru"
+                        className="scroll-mt-20 border-t border-border/60"
+                    >
                         <div className="mx-auto max-w-6xl px-4 py-16">
                             <Reveal className="mb-8 flex items-end justify-between gap-4">
                                 <div>
@@ -289,15 +231,11 @@ export default function Welcome({
                             </Reveal>
 
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                                {latestBooks.map((book, i) => {
+                                {latestBooks.map((book) => {
                                     const cover = book.primary_image;
 
                                     return (
-                                        <Reveal
-                                            key={book.id}
-                                            delay={Math.min(i, 9) * 45}
-                                            className="h-full"
-                                        >
+                                        <div key={book.id}>
                                             <Link
                                                 href={CatalogController.show(
                                                     book.slug,
@@ -344,7 +282,7 @@ export default function Welcome({
                                                     </p>
                                                 </div>
                                             </Link>
-                                        </Reveal>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -367,7 +305,7 @@ export default function Welcome({
                                     />
                                     <div className="relative grid gap-8 md:grid-cols-2">
                                         <div>
-                                            <span className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">
+                                            <span className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-accent-foreground">
                                                 <MapPin className="size-3.5" />
                                                 Toko offline
                                             </span>
@@ -467,7 +405,7 @@ export default function Welcome({
 
                 {/* ---------- Gallery ---------- */}
                 {store.gallery.length > 0 && (
-                    <section className="border-t border-border/60 bg-card/40">
+                    <section className="border-t border-border/60 bg-accent/30">
                         <div className="mx-auto max-w-6xl px-4 py-16">
                             <Reveal className="mb-8">
                                 <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground">
@@ -508,60 +446,41 @@ export default function Welcome({
                                 href={igLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-brand via-primary to-sky px-6 py-12 text-center text-white"
+                                className="group relative flex items-center justify-center overflow-hidden rounded-2xl bg-primary px-6 py-12 text-center text-white"
                             >
-                                <Instagram className="size-10" />
-                                <h2 className="font-serif text-2xl font-semibold sm:text-3xl">
-                                    Ikuti keseharian kami di Instagram
-                                </h2>
-                                <p className="text-white/85">
-                                    Update buku baru, kuis, & event toko —
-                                    <span className="font-semibold">
-                                        {' '}
-                                        @{igHandle}
+                                <div
+                                    aria-hidden="true"
+                                    className="animate-drift pointer-events-none absolute -top-16 -left-10 size-56 rounded-full bg-brand/40 blur-3xl"
+                                />
+                                <div className="relative z-10 flex flex-col items-center gap-4">
+                                    <Instagram className="size-10" />
+                                    <h2 className="font-serif text-2xl font-semibold sm:text-3xl">
+                                        Ikuti keseharian kami di Instagram
+                                    </h2>
+                                    <p className="text-white/85">
+                                        Update buku baru, kuis, & event toko —
+                                        <span className="font-semibold">
+                                            {' '}
+                                            @{igHandle}
+                                        </span>
+                                    </p>
+                                    <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-primary transition-transform group-hover:scale-105">
+                                        <Instagram className="size-4" />
+                                        Ikuti @{igHandle}
                                     </span>
-                                </p>
-                                <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-primary transition-transform group-hover:scale-105">
-                                    <Instagram className="size-4" />
-                                    Ikuti @{igHandle}
-                                </span>
+                                </div>
                             </a>
                         </Reveal>
                     </section>
                 )}
-
-                {/* ---------- Trust ---------- */}
-                <section className="border-t border-border/60 bg-card/40">
-                    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:grid-cols-3">
-                        {TRUST.map(({ icon: Icon, title, body }, i) => (
-                            <Reveal
-                                key={title}
-                                delay={i * 120}
-                                className="rounded-xl border border-border bg-card p-6"
-                            >
-                                <div
-                                    className={`mb-4 inline-flex size-11 items-center justify-center rounded-lg ${CHIP[i % CHIP.length]}`}
-                                >
-                                    <Icon className="size-5" />
-                                </div>
-                                <h3 className="font-serif text-lg font-semibold text-foreground">
-                                    {title}
-                                </h3>
-                                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                    {body}
-                                </p>
-                            </Reveal>
-                        ))}
-                    </div>
-                </section>
             </main>
 
-            <footer className="border-t border-border/60">
+            <footer className="border-t border-border/60 bg-secondary/40">
                 <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm text-muted-foreground sm:grid-cols-[1fr_auto]">
                     <div>
                         <span className="font-serif text-base font-semibold text-foreground">
                             {store.name.replace(/Book$/, '')}
-                            <span className="text-brand">Book</span>
+                            <span className="text-accent-foreground">Book</span>
                         </span>
                         <p className="mt-1">{store.tagline}.</p>
                         {store.address && (
