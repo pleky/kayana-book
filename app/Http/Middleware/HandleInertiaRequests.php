@@ -2,7 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Category;
+use App\Services\CartService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -35,13 +38,44 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // The catalog header (cart badge + category nav) only renders on the
+        // storefront — admin pages use a different layout — so skip the work
+        // there entirely instead of computing it on every request.
+        $storefront = ! $request->routeIs('admin.*');
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
             ],
+            'cartCount' => fn (): int => $storefront ? app(CartService::class)->count() : 0,
+            'navCategories' => fn () => $storefront ? $this->navCategories() : [],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The catalog navigation tree as plain arrays, cached until any category
+     * changes (busted by {@see Category::booted()}). Caching arrays — not the
+     * Eloquent collection — keeps the serialized payload stable across the
+     * database cache store.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function navCategories(): array
+    {
+        return Cache::remember(
+            Category::NAV_CACHE_KEY,
+            now()->addHours(6),
+            fn (): array => Category::orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'parent_id'])
+                ->toArray(),
+        );
     }
 }

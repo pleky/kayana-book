@@ -205,3 +205,10 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 - IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
 
 </laravel-boost-guidelines>
+
+## Design Context
+
+- See `PRODUCT.md` (root) for strategic design context. Register: **brand** (the storefront is the marketing).
+- Principles: the store is the ad; bright, not loud; confidence before checkout; fun a parent trusts (craft not clip-art); mobile-first, Indonesia-real.
+- Visual system in `DESIGN.md` + tokens in `resources/css/app.css`. Restyle by editing tokens, not shadcn components. Target WCAG 2.1 AA.
+- For UI design/redesign/critique/polish work, use the `impeccable` skill.

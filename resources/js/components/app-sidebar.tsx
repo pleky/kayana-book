@@ -1,5 +1,19 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    BookCopy,
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    Library,
+    Link2,
+    ReceiptText,
+    Tags,
+} from 'lucide-react';
+import AdminBookController from '@/actions/App/Http/Controllers/Admin/BookController';
+import AdminCategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import AdminCheckoutLinkController from '@/actions/App/Http/Controllers/Admin/CheckoutLinkController';
+import AdminOrderController from '@/actions/App/Http/Controllers/Admin/OrderController';
+import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -14,13 +28,41 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { Auth, NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Katalog',
+        href: CatalogController.index(),
+        icon: Library,
+    },
+];
+
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Kelola Buku',
+        href: AdminBookController.index(),
+        icon: BookCopy,
+    },
+    {
+        title: 'Pesanan Masuk',
+        href: AdminOrderController.index(),
+        icon: ReceiptText,
+    },
+    {
+        title: 'Link Bayar',
+        href: AdminCheckoutLinkController.index(),
+        icon: Link2,
+    },
+    {
+        title: 'Kategori',
+        href: AdminCategoryController.index(),
+        icon: Tags,
     },
 ];
 
@@ -38,6 +80,11 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const mainNavItems = auth.user?.is_admin
+        ? [...baseNavItems, ...adminNavItems]
+        : baseNavItems;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

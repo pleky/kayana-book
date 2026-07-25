@@ -9,9 +9,10 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif:
+        'Fraunces', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -59,77 +60,92 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Brand accents pulled from the logo: warm orange + sparkle cyan */
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-sky: var(--sky);
+    --color-sky-foreground: var(--sky-foreground);
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    /* Kayana logo palette — navy indigo brand, warm orange + sparkle cyan */
+    --background: oklch(0.99 0.004 250);
+    --foreground: oklch(0.26 0.06 280);
+    --card: oklch(0.995 0.003 250);
+    --card-foreground: oklch(0.26 0.06 280);
+    --popover: oklch(0.995 0.003 250);
+    --popover-foreground: oklch(0.26 0.06 280);
+    --primary: oklch(0.37 0.17 278);
+    --primary-foreground: oklch(0.99 0.01 250);
+    --secondary: oklch(0.95 0.035 235);
+    --secondary-foreground: oklch(0.33 0.1 278);
+    --muted: oklch(0.96 0.012 250);
+    --muted-foreground: oklch(0.5 0.035 272);
+    --accent: oklch(0.93 0.05 67);
+    --accent-foreground: oklch(0.45 0.12 55);
+    --destructive: oklch(0.57 0.21 27);
+    --destructive-foreground: oklch(0.99 0.01 250);
+    --border: oklch(0.9 0.013 255);
+    --input: oklch(0.9 0.013 255);
+    --ring: oklch(0.37 0.17 278);
+    --brand: oklch(0.74 0.145 62);
+    --brand-foreground: oklch(0.26 0.09 280);
+    --sky: oklch(0.7 0.14 233);
+    --sky-foreground: oklch(0.99 0.01 250);
+    --chart-1: oklch(0.37 0.17 278);
+    --chart-2: oklch(0.74 0.145 62);
+    --chart-3: oklch(0.7 0.14 233);
+    --chart-4: oklch(0.65 0.2 5);
+    --chart-5: oklch(0.55 0.16 300);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar: oklch(0.97 0.012 250);
+    --sidebar-foreground: oklch(0.26 0.06 280);
+    --sidebar-primary: oklch(0.37 0.17 278);
+    --sidebar-primary-foreground: oklch(0.99 0.01 250);
+    --sidebar-accent: oklch(0.93 0.05 67);
+    --sidebar-accent-foreground: oklch(0.45 0.12 55);
+    --sidebar-border: oklch(0.9 0.013 255);
+    --sidebar-ring: oklch(0.37 0.17 278);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --background: oklch(0.19 0.03 280);
+    --foreground: oklch(0.95 0.012 250);
+    --card: oklch(0.23 0.035 280);
+    --card-foreground: oklch(0.95 0.012 250);
+    --popover: oklch(0.23 0.035 280);
+    --popover-foreground: oklch(0.95 0.012 250);
+    --primary: oklch(0.62 0.17 277);
+    --primary-foreground: oklch(0.99 0.01 250);
+    --secondary: oklch(0.3 0.04 278);
+    --secondary-foreground: oklch(0.95 0.012 250);
+    --muted: oklch(0.3 0.035 278);
+    --muted-foreground: oklch(0.74 0.03 255);
+    --accent: oklch(0.36 0.06 60);
+    --accent-foreground: oklch(0.92 0.06 70);
+    --destructive: oklch(0.55 0.18 25);
+    --destructive-foreground: oklch(0.96 0.01 250);
+    --border: oklch(0.33 0.035 278);
+    --input: oklch(0.35 0.035 278);
+    --ring: oklch(0.62 0.17 277);
+    --brand: oklch(0.78 0.15 64);
+    --brand-foreground: oklch(0.24 0.09 280);
+    --sky: oklch(0.74 0.14 233);
+    --sky-foreground: oklch(0.2 0.04 270);
+    --chart-1: oklch(0.62 0.17 277);
+    --chart-2: oklch(0.78 0.15 64);
+    --chart-3: oklch(0.74 0.14 233);
+    --chart-4: oklch(0.7 0.19 5);
+    --chart-5: oklch(0.66 0.16 300);
+    --sidebar: oklch(0.23 0.035 280);
+    --sidebar-foreground: oklch(0.95 0.012 250);
+    --sidebar-primary: oklch(0.62 0.17 277);
+    --sidebar-primary-foreground: oklch(0.99 0.01 250);
+    --sidebar-accent: oklch(0.36 0.06 60);
+    --sidebar-accent-foreground: oklch(0.92 0.06 70);
+    --sidebar-border: oklch(0.33 0.035 278);
+    --sidebar-ring: oklch(0.62 0.17 277);
 }
 
 @layer base {
@@ -140,4 +156,119 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion — scroll reveal, masked headline, ambient drift, scroll progress.
+   All effects are gated behind `prefers-reduced-motion: no-preference`, so
+   reduced-motion users see the final state immediately. Only transform /
+   opacity / filter animate (GPU-safe).
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+            opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+            transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+            filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        transition-delay: var(--reveal-delay, 0ms);
+        will-change: transform, opacity;
+    }
+    [data-reveal='left'] {
+        transform: translateX(-36px);
+    }
+    [data-reveal='right'] {
+        transform: translateX(36px);
+    }
+    [data-reveal='scale'] {
+        transform: scale(0.92);
+    }
+    [data-reveal='blur'] {
+        filter: blur(10px);
+    }
+    [data-reveal].is-visible {
+        opacity: 1;
+        transform: none;
+        filter: none;
+        will-change: auto;
+    }
+
+    /* Masked headline: each line slides up from behind an overflow-hidden box */
+    .line-reveal > span {
+        display: inline-block;
+        transform: translateY(115%);
+        animation: lineUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: var(--line-delay, 0ms);
+    }
+
+    .animate-drift {
+        animation: drift 20s ease-in-out infinite alternate;
+    }
+    .animate-float-slow {
+        animation: floatSlow 9s ease-in-out infinite;
+    }
+    .animate-scroll-hint {
+        animation: scrollHint 1.8s ease-in-out infinite;
+    }
+}
+
+@keyframes lineUp {
+    to {
+        transform: translateY(0);
+    }
+}
+@keyframes drift {
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+    to {
+        transform: translate(36px, -28px) scale(1.18);
+    }
+}
+@keyframes floatSlow {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Scroll-cue: gentle downward nudge + fade so users know to scroll. */
+@keyframes scrollHint {
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.55;
+    }
+    50% {
+        transform: translateY(8px);
+        opacity: 1;
+    }
+}
+
+/* Top scroll-progress bar; JS sets --scroll (0..1) */
+.scroll-progress {
+    transform-origin: 0 50%;
+    transform: scaleX(var(--scroll, 0));
+}
+
+/* Lenis smooth scroll (recommended base styles) */
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+    overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+    pointer-events: none;
 }

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-01T00:00:00Z",
+  "title": "Design System: Kayana Book",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Ink Navy", "canonical": "oklch(0.37 0.17 278)", "tonalRamp": ["oklch(0.15 0.08 278)", "oklch(0.22 0.11 278)", "oklch(0.30 0.14 278)", "oklch(0.37 0.17 278)", "oklch(0.48 0.16 278)", "oklch(0.62 0.14 278)", "oklch(0.78 0.09 278)", "oklch(0.93 0.04 278)"] },
+      "brand-orange": { "role": "tertiary", "displayName": "Sparkle Orange", "canonical": "oklch(0.74 0.145 62)", "tonalRamp": ["oklch(0.30 0.06 62)", "oklch(0.40 0.09 62)", "oklch(0.52 0.12 62)", "oklch(0.63 0.14 62)", "oklch(0.74 0.145 62)", "oklch(0.83 0.12 62)", "oklch(0.90 0.08 62)", "oklch(0.96 0.04 62)"] },
+      "sky-cyan": { "role": "tertiary", "displayName": "Glint Cyan", "canonical": "oklch(0.7 0.14 233)", "tonalRamp": ["oklch(0.28 0.06 233)", "oklch(0.38 0.09 233)", "oklch(0.50 0.11 233)", "oklch(0.60 0.13 233)", "oklch(0.70 0.14 233)", "oklch(0.80 0.10 233)", "oklch(0.88 0.07 233)", "oklch(0.95 0.03 233)"] },
+      "ink": { "role": "neutral", "displayName": "Ink Text", "canonical": "oklch(0.26 0.06 280)", "tonalRamp": ["oklch(0.20 0.05 280)", "oklch(0.26 0.06 280)", "oklch(0.38 0.05 280)", "oklch(0.50 0.035 272)", "oklch(0.65 0.02 272)", "oklch(0.80 0.012 260)", "oklch(0.90 0.008 255)", "oklch(0.99 0.004 250)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Fraunces serif hero/section headlines only. Ceiling ~3.75rem." },
+      "body": { "displayName": "Body", "purpose": "Inter for all prose, prices, forms, and UI chrome." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "0 1px 2px rgba(20,20,40,0.05)", "purpose": "Buttons and inputs at rest." },
+      { "name": "card", "value": "0 1px 3px rgba(20,20,40,0.08)", "purpose": "Cards and product tiles at rest." },
+      { "name": "cover-hover", "value": "0 10px 30px rgba(20,20,40,0.14)", "purpose": "Lift on hovered interactive book covers." }
+    ],
+    "motion": [
+      { "name": "ease-out-quint", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default easing for reveals and state transitions — fast out, gentle settle, no bounce." },
+      { "name": "reveal-duration", "value": "0.7s", "purpose": "Scroll-reveal transition length." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default CTA for the whole buy flow.",
+      "html": "<button class=\"ds-btn-primary\">Beli sekarang</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; background: var(--primary, oklch(0.37 0.17 278)); color: var(--primary-foreground, oklch(0.99 0.01 250)); font: 500 0.875rem Inter, sans-serif; border: none; border-radius: 8px; box-shadow: 0 1px 2px rgba(20,20,40,0.05); cursor: pointer; transition: background 0.2s cubic-bezier(0.16,1,0.3,1), transform 0.12s cubic-bezier(0.16,1,0.3,1); } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary, oklch(0.37 0.17 278)) 90%, black); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.37 0.17 278)) 50%, transparent); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action; hairline on the ground with warm hover.",
+      "html": "<button class=\"ds-btn-outline\">Lihat detail</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; background: var(--background, oklch(0.99 0.004 250)); color: var(--foreground, oklch(0.26 0.06 280)); font: 500 0.875rem Inter, sans-serif; border: 1px solid var(--border, oklch(0.9 0.013 255)); border-radius: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; } .ds-btn-outline:hover { background: var(--accent, oklch(0.93 0.05 67)); color: var(--accent-foreground, oklch(0.45 0.12 55)); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.37 0.17 278)) 50%, transparent); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Standard form field with navy focus language.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nama penerima\" />",
+      "css": ".ds-input { height: 36px; width: 100%; padding: 4px 12px; background: transparent; color: var(--foreground, oklch(0.26 0.06 280)); font: 400 0.875rem Inter, sans-serif; border: 1px solid var(--input, oklch(0.9 0.013 255)); border-radius: 8px; box-shadow: 0 1px 2px rgba(20,20,40,0.05); outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: var(--muted-foreground, oklch(0.5 0.035 272)); } .ds-input:focus-visible { border-color: var(--ring, oklch(0.37 0.17 278)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.37 0.17 278)) 50%, transparent); }"
+    },
+    {
+      "name": "Product Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Book tile — flat at rest, lifts on hover.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-cover\"></div><h3 class=\"ds-card-title\">Petualangan Kayana</h3><p class=\"ds-card-price\">Rp 89.000</p></article>",
+      "css": ".ds-card { display: block; padding: 16px; background: var(--card, oklch(0.995 0.003 250)); border-radius: 12px; box-shadow: 0 1px 3px rgba(20,20,40,0.08); transition: box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), transform 0.25s cubic-bezier(0.16,1,0.3,1); cursor: pointer; } .ds-card:hover { box-shadow: 0 10px 30px rgba(20,20,40,0.14); transform: translateY(-4px); } .ds-card-cover { aspect-ratio: 3/4; border-radius: 8px; background: linear-gradient(135deg, var(--secondary, oklch(0.95 0.035 235)), var(--accent, oklch(0.93 0.05 67))); margin-bottom: 12px; } .ds-card-title { font: 600 1.125rem Inter, sans-serif; color: var(--foreground, oklch(0.26 0.06 280)); margin: 0; } .ds-card-price { font: 600 0.875rem Inter, sans-serif; color: var(--primary, oklch(0.37 0.17 278)); margin: 4px 0 0; }"
+    },
+    {
+      "name": "Sparkle Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Orange accent badge — the sparkle pop, used sparingly.",
+      "html": "<span class=\"ds-badge\">Baru</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; background: color-mix(in oklch, var(--brand, oklch(0.74 0.145 62)) 20%, transparent); color: var(--brand-foreground, oklch(0.26 0.09 280)); font: 500 0.75rem Inter, sans-serif; border-radius: 9999px; }"
+    },
+    {
+      "name": "Wordmark",
+      "kind": "nav",
+      "refersTo": "nav-wordmark",
+      "description": "Kayana Book brand wordmark — navy ink + orange sparkle.",
+      "html": "<a class=\"ds-wordmark\" href=\"/\">Kayana<span>Book</span></a>",
+      "css": ".ds-wordmark { font: 600 1.5rem Fraunces, serif; color: var(--primary, oklch(0.37 0.17 278)); text-decoration: none; letter-spacing: -0.01em; } .ds-wordmark span { color: var(--brand, oklch(0.74 0.145 62)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Sparkle & Ink",
+    "overview": "Kayana Book takes its whole visual identity from its own logo: a navy-ink wordmark next to a monkey reading, lit by orange and cyan sparkles. It is a secondhand bookstore — single-copy used books across every genre, sold with honest condition photos. Confident navy type carries structure and trust; warm orange and cyan appear as punctuation. This is a brand register — the store is the ad, so even the cart and order-tracking screens wear the identity. Bright, not loud: the energy comes from a small number of saturated pops against generous quiet space. Fun is manufactured by craft — the Fraunces display serif, purposeful reveal motion, a springy tap — never by cartoon clip-art. Every playful move must survive one test: would a buyer still trust this bookstore with their money? A secondhand shop has to feel like a curated treasure hunt, not a bargain bin.",
+    "keyCharacteristics": [
+      "Navy ink for structure; orange + cyan reserved as sparkle accents (≤10% of a screen).",
+      "Fraunces display serif over Inter body — contrast pairing, not two similar sans.",
+      "Flat at rest; depth arrives on interaction (hover, focus, dialog).",
+      "Bouncy, tactile feedback — motion is part of the build, gated behind reduced-motion.",
+      "Mobile-first, thumb-reachable, fast on mid-range devices."
+    ],
+    "rules": [
+      { "name": "The Sparkle Budget Rule", "body": "Orange and cyan combined occupy ≤10% of any given screen. Their rarity is the delight; spend them on one hero accent, a badge, a progress bar — not on every element. Navy does the work.", "section": "colors" },
+      { "name": "The No-Warm-Ground Rule", "body": "The background is a cool near-white, never cream/sand/paper. Warmth comes from the orange accent and Fraunces type, never a tinted body background.", "section": "colors" },
+      { "name": "The Serif-Is-Special Rule", "body": "Fraunces is for headings and the wordmark only. Body, forms, prices, and UI chrome stay Inter.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Depth appears only in response to state — hover lift, the 3px focus ring, or an overlay.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do anchor every screen in Ink Navy and spend orange/cyan as sparkle accents on ≤10% of the surface.",
+      "Do keep the background a cool near-white; carry warmth through the orange accent and Fraunces type.",
+      "Do use Fraunces for headings and the wordmark only; Inter for everything else.",
+      "Do keep surfaces flat at rest and let depth answer interaction.",
+      "Do add springy, tactile feedback and always ship a prefers-reduced-motion alternative.",
+      "Do verify contrast: body and placeholder text ≥4.5:1. Orange and cyan are decoration, never body text on white."
+    ],
+    "donts": [
+      "Don't build a generic Indonesian marketplace: no banner spam, no badge noise, no cluttered grids.",
+      "Don't use childish clip-art, Comic Sans, or rainbow gradients.",
+      "Don't ship cold corporate SaaS: no sterile gray, personality-free screens.",
+      "Don't use gradient text (bg-clip-text + text-transparent). The current welcome.tsx hero does this and should be replaced with solid navy plus one orange accent word.",
+      "Don't set orange or cyan as body text on the near-white ground; it fails contrast.",
+      "Don't use border-left/border-right >1px as a colored accent stripe."
+    ]
+  }
+}

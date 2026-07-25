@@ -16,7 +16,12 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(fn () => $this->withoutVite())
     ->in('Feature');
+
+// Unit tests boot the app (so config()/the container are available) but skip
+// RefreshDatabase — they exercise pure logic without touching the database.
+pest()->extend(TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------

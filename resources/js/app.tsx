@@ -1,4 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { ConfirmProvider } from '@/components/confirm-dialog';
+import { SmoothScroll } from '@/components/smooth-scroll';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -14,6 +16,12 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            case name.startsWith('catalog/'):
+            case name.startsWith('cart/'):
+            case name.startsWith('checkout/'):
+            case name.startsWith('checkout-link/'):
+            case name.startsWith('orders/'):
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
@@ -26,7 +34,8 @@ createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                {app}
+                <SmoothScroll />
+                <ConfirmProvider>{app}</ConfirmProvider>
                 <Toaster />
             </TooltipProvider>
         );
