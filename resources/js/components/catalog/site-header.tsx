@@ -1,28 +1,45 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { ChevronDown, LayoutGrid, Search, ShoppingCart } from 'lucide-react';
+import {
+    ChevronDown,
+    LayoutGrid,
+    LogOut,
+    MapPin,
+    Package,
+    Search,
+    ShoppingCart,
+    UserRound,
+} from 'lucide-react';
 import { useState } from 'react';
 import CartController from '@/actions/App/Http/Controllers/CartController';
 import CatalogController from '@/actions/App/Http/Controllers/CatalogController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
+import AddressController from '@/actions/App/Http/Controllers/Settings/AddressController';
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { UserInfo } from '@/components/user-info';
 import { useFlashToasts } from '@/hooks/use-flash-toasts';
-import { dashboard, login } from '@/routes';
+import { useInitials } from '@/hooks/use-initials';
+import { login, logout } from '@/routes';
 import type { SharedProps } from '@/types/global';
 
 export default function SiteHeader() {
     const { auth, cartCount, navCategories } = usePage<SharedProps>().props;
     const [search, setSearch] = useState('');
+    const getInitials = useInitials();
 
     useFlashToasts();
 
@@ -129,7 +146,7 @@ export default function SiteHeader() {
                     </form>
                 </div>
 
-                <nav className="flex shrink-0 items-center gap-1">
+                <nav className="flex shrink-0 items-center gap-4">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -140,7 +157,7 @@ export default function SiteHeader() {
                             href={CartController.index()}
                             aria-label="Keranjang"
                         >
-                            <ShoppingCart />
+                            <ShoppingCart className="size-5" />
                             {cartCount > 0 && (
                                 <Badge className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs">
                                     {cartCount}
@@ -150,20 +167,71 @@ export default function SiteHeader() {
                     </Button>
 
                     {auth?.user ? (
-                        <>
-                            <Button
-                                variant="ghost"
-                                asChild
-                                className="hidden sm:inline-flex"
-                            >
-                                <Link href={OrderController.index()}>
-                                    Pesanan
-                                </Link>
-                            </Button>
-                            <Button asChild>
-                                <Link href={dashboard()}>Dashboard</Link>
-                            </Button>
-                        </>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full"
+                                    aria-label="Akun saya"
+                                >
+                                    <Avatar className="size-7">
+                                        <AvatarImage
+                                            src={auth.user.avatar}
+                                            alt={auth.user.name}
+                                        />
+                                        <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+                                            {getInitials(auth.user.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel className="p-0 font-normal">
+                                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                                        <UserInfo user={auth.user} showEmail />
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href={OrderController.index()}>
+                                        <Package className="mr-2 size-4" />
+                                        Pesanan
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={ProfileController.edit()}
+                                        prefetch
+                                    >
+                                        <UserRound className="mr-2 size-4" />
+                                        Edit profil
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={AddressController.edit()}
+                                        prefetch
+                                    >
+                                        <MapPin className="mr-2 size-4" />
+                                        Alamat
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={logout()}
+                                        as="button"
+                                        onClick={() => router.flushAll()}
+                                        className="w-full cursor-pointer"
+                                        data-test="logout-button"
+                                    >
+                                        <LogOut className="mr-2 size-4" />
+                                        Keluar
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     ) : (
                         <Button asChild>
                             <Link href={login()}>Masuk</Link>

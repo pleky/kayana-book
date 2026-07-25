@@ -211,7 +211,7 @@ export default function Welcome({
                 {latestBooks.length > 0 && (
                     <section
                         id="baru"
-                        className="scroll-mt-20 border-t border-border/60"
+                        className="scroll-mt-5 border-t border-border/60"
                     >
                         <div className="mx-auto max-w-6xl px-4 py-16">
                             <Reveal className="mb-8 flex items-end justify-between gap-4">
